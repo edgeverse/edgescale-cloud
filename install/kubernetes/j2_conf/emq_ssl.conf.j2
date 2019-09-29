@@ -1,0 +1,8 @@
+[{server,
+  [{certfile, "etc/certs/cert.pem"},
+   {keyfile, "etc/certs/key.pem"},
+   {secure_renegotiate, true},
+   {depth, 0}]},
+ {client,
+  [{secure_renegotiate, true}]}].
+

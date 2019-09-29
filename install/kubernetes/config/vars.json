@@ -1,0 +1,47 @@
+{
+    "env":{
+        "domain_name":"",
+        "harbor_user":"",
+        "harbor_pass":"",
+        "harbor_domain":"",
+        "harbor_respo_subdir":"",
+        "harbor_ip_address":"",
+        "faas_pass":"",
+        "faas_user":""
+    },
+   "service":{
+		"REDIS_PWD":"",
+		"ADMIN_EMAIL_PWD":"",
+		"SMTP_HOST":"",
+		"ADMIN_EMAIL":"",
+		"SMTP_PORT":"",
+		"MQTT_URI":"",
+		"HOST_SITE":"",
+		"LOG_URL":"",
+		"API_URI":"",
+		"DOCKER_CONTNET_TRUST":"",
+		"K8S_HOST":""
+   },
+    "db":{
+        "pg_pass":"",
+        "pg_user":"",
+        "pg_database":"",
+        "pg_host":"",
+        "pg_es_pass":"",
+        "mongo_user":"",
+        "mongo_pass":"",
+        "kong_user":"",
+        "kong_pass":"",
+        "kong_database":"",
+        "pg_max_connections":1000
+    },
+    "minio":{
+        "access_key":"",
+        "secret_key":""
+    },
+    "ssl":{
+        "cert_path":"/install/kubernetes/resource/sslcert/edgescale.crt",
+        "key_path":"/install/kubernetes/resource/sslcert/edgescale.key"
+    }
+}
+

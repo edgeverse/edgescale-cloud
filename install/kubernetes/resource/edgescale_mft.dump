@@ -1,0 +1,372 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 11.4 (Debian 11.4-1.pgdg90+1)
+-- Dumped by pg_dump version 11.4 (Debian 11.4-1.pgdg90+1)
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner: 
+--
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
+
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: customers; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.customers (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    deleted_at timestamp with time zone,
+    name character varying(100),
+    oem_id character varying(64),
+    data jsonb
+);
+
+
+ALTER TABLE public.customers OWNER TO root;
+
+--
+-- Name: device_models; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.device_models (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    deleted_at timestamp with time zone,
+    device_model character varying(30),
+    type character varying(30),
+    vendor character varying(30),
+    platform character varying(30),
+    model_id integer NOT NULL,
+    data jsonb
+);
+
+
+ALTER TABLE public.device_models OWNER TO root;
+
+--
+-- Name: devices; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.devices (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    deleted_at timestamp with time zone,
+    name character varying(100),
+    fuid character varying(32),
+    oem_id character varying(64),
+    sk_hash character varying(64),
+    mp_tag character varying(64),
+    model_id integer,
+    oem_uid character varying(64),
+    status integer,
+    project_id uuid,
+    data jsonb
+);
+
+
+ALTER TABLE public.devices OWNER TO root;
+
+--
+-- Name: fuse_configs; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.fuse_configs (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    deleted_at timestamp with time zone,
+    name character varying(100) NOT NULL,
+    oem_id character varying(64) NOT NULL,
+    key_id uuid,
+    data jsonb
+);
+
+
+ALTER TABLE public.fuse_configs OWNER TO root;
+
+--
+-- Name: projects; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.projects (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    deleted_at timestamp with time zone,
+    name character varying(100) NOT NULL,
+    number integer,
+    customer_id uuid,
+    model_id integer,
+    oem_id character varying(64) NOT NULL,
+    fuse_config_id uuid,
+    is_fuse boolean,
+    data jsonb
+);
+
+
+ALTER TABLE public.projects OWNER TO root;
+
+--
+-- Name: root_keys; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.root_keys (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    deleted_at timestamp with time zone,
+    name character varying(100) NOT NULL,
+    oem_id character varying(64) NOT NULL,
+    key_hash character varying(64) NOT NULL,
+    data jsonb
+);
+
+
+ALTER TABLE public.root_keys OWNER TO root;
+
+--
+-- Data for Name: customers; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.customers (id, created_at, updated_at, deleted_at, name, oem_id, data) FROM stdin;
+\.
+
+
+--
+-- Data for Name: device_models; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.device_models (id, created_at, updated_at, deleted_at, device_model, type, vendor, platform, model_id, data) FROM stdin;
+882f6235-11db-46b0-a9e7-fbd788284b51	2019-07-20 00:15:40.661018+00	2019-07-20 00:15:40.661018+00	\N	iot	generic	bcm	respberry	391	\N
+\.
+
+
+--
+-- Data for Name: devices; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.devices (id, created_at, updated_at, deleted_at, name, fuid, oem_id, sk_hash, mp_tag, model_id, oem_uid, status, project_id, data) FROM stdin;
+a79c17bc-e670-5dad-8738-6c480879cdba	2019-07-20 06:12:26.232751+00	2019-07-20 06:12:40.816593+00	\N		xc	bbb2dd53			370		1	\N	{"key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlHZk1BMEdDU3FHU0liM0RRRUJBUVVBQTRHTkFEQ0JpUUtCZ1FDOUgvK1FpYzFsY3JXSHFTc2xBUE9hbDdiOQpJRDREUitqUzNpWDhZSElqNkMwVnhlcmtuR3BrTWRRdk9YYnRqMXVtZlErZ2ZudVExNVBJYVZIblEvNUZIemtWCkVhL0IveEJKSlRCWWFkWTBENVI0RXdkZHd3MC9pMWd4NUZsQVpxZ00yaFZsRzZ1YzRnOEh6SWhteHdDUXBXSjkKZWxZbTNQcDRwa1ZvTzRJU2VRSURBUUFCCi0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo=", "auth": {"is_ok": false, "e_token": "", "challenge": ""}}
+8038444e-2a6a-5565-8df2-ee4a00522c49	2019-07-20 11:52:20.751255+00	2019-07-20 11:52:20.731988+00	\N		x	bbb2dd53			0		0	\N	\N
+eb5a61d0-8824-50b1-a4c3-10f90cc806fa	2019-07-20 11:52:51.888951+00	2019-07-20 11:52:51.875725+00	\N		xw	bbb2dd53			0		0	\N	\N
+3775e8b3-1cb2-5093-98f7-4070fd0276ac	2019-07-20 11:53:08.255676+00	2019-07-20 11:53:08.237441+00	\N		xw3	bbb2dd53			0		0	\N	\N
+61edbf9e-8e92-55be-8eb7-170b344f2242	2019-07-20 11:54:01.88783+00	2019-07-20 12:30:21.591232+00	\N		nb	bbb2dd53			256		1	\N	{"key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlHZk1BMEdDU3FHU0liM0RRRUJBUVVBQTRHTkFEQ0JpUUtCZ1FERjlYblhSTXlsV0h6di95MU8rTFN0RUdXNwpnSGNGQkVHUStBbFloVXc1YURpSXlzZFZPVzhxYlRLaXMyU1hZUkdpUVZLaHBRK0F2b04vQWR2T0cvL3I2cGNZClpiZC8reDdhOGFVV3dCYm1teVV4OC9jbEFkSFZiaExwNVU0VHQ2NmN5dzZzeVZ0S0tJZlgzakIwdWZJY2ZwSFUKYUEzOHZQU3g0S2VXYmVERENRSURBUUFCCi0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo=", "auth": {"is_ok": true, "e_token": "b64fa4c45fd7137b204a474e4a9e84", "challenge": "8db1170223"}}
+1425c1cc-5bd1-5488-94c7-0a2177561222	2019-07-20 17:42:30.776968+00	2019-07-20 17:42:30.760756+00	\N		sd	bbb2dd53			0		0	\N	\N
+d9a70d8a-c6ab-5668-8bc3-adbbca0a00f7	2019-07-20 17:43:10.731699+00	2019-07-20 17:43:10.716093+00	\N		xx	bbb2dd53			0		0	\N	\N
+4bf68921-0f1e-57b6-8394-6261bed4d173	2019-07-20 17:43:19.049228+00	2019-07-20 17:43:19.034808+00	\N		x1	bbb2dd53			0		0	\N	\N
+203148f9-c562-5da6-a98a-9766931e7963	2019-07-20 18:19:45.43634+00	2019-07-20 18:19:45.419802+00	\N		n	bbb2dd53			0		0	\N	\N
+32025395-0715-5f67-b312-78ebe22e06f6	2019-07-20 18:46:08.860362+00	2019-07-20 18:46:08.846764+00	\N		x	x48			0		0	\N	\N
+e99d4741-29b4-54c3-87a5-141afcfacc03	2019-07-20 18:50:18.217022+00	2019-07-20 19:06:02.854954+00	\N		xn	bbb2dd53			213		1	\N	{"key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlHZk1BMEdDU3FHU0liM0RRRUJBUVVBQTRHTkFEQ0JpUUtCZ1FEQVh0bldsbzgxNU1BUEVoeGJtdzJDeFJzZwpRT3doMEVhRHlBZWQ3ZS8rZXRENkVIaS9SNHN0K1dPdk10bDh2RFZveUcrdHNvNFlpS2MvTG9TWmQ5alZ1NE5ICklsRWZpZ2xhZ0loOGZ0VmxEZXF2Z1FScTQvOVpQbnp0L0s3eFlsT2x4MTZXTTJXRG1SNzgwbXRmZkc5ZnRrQjYKZlpTcG9aS2xrM2JiQlJoZHh3SURBUUFCCi0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo=", "auth": {"is_ok": false, "e_token": "", "challenge": ""}}
+4cc0cdf2-a144-550e-9d46-ecad086840d2	2019-07-21 08:37:27.516564+00	2019-07-21 08:37:27.499223+00	\N		1	bbb2dd53			0		0	\N	\N
+0bd365b8-f45b-551e-9218-79fd27f0c7e9	2019-07-21 08:42:40.498687+00	2019-07-21 08:42:40.485807+00	\N		123	bbb2dd53			0		0	\N	\N
+d3f9ff70-ef93-5b8a-94bf-5400b9303c4e	2019-07-21 13:18:46.31613+00	2019-07-21 13:18:46.30104+00	\N		11	bbb2dd53			0		0	\N	\N
+46bc0187-d7cf-54ad-ba7e-ab9188ff550a	2019-07-21 13:20:49.137402+00	2019-07-21 13:20:49.12702+00	\N		511	bbb2dd53			0		0	\N	\N
+4802cf2c-ca46-587f-8a69-9a0ef6e62dc3	2019-07-21 14:07:37.461616+00	2019-07-21 15:21:28.618507+00	\N		511m	bbb2dd53			241		1	\N	{"key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlHZk1BMEdDU3FHU0liM0RRRUJBUVVBQTRHTkFEQ0JpUUtCZ1FEQ1RtUDBKYXpzaXdGeWo2Q0VLZ25xMXg2SQozV1ZxU1JBVHVkRndET1NGNEVhK2tKZ2tEMVpsRURSNE9TeTNJUkNpL0s1MjBWUjdZUFc1THdwbmNOcnAzVGlsCjV3N3d3amJXSnBxd2tZWC8wTGdsZXRabUE0NWlUZWgrZHVHRjNVY2RHSzJDdVZUZm1Xei91WTZnUjdOcEFocVYKS0ZzTlZwNkpqWEwzNFN0Y0JRSURBUUFCCi0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo=", "auth": {"is_ok": true, "e_token": "9c859a928f90ce1f730489e65b7d94", "challenge": "3cb51bdbfd"}}
+48362df0-72e3-5086-a74a-128ff391120a	2019-07-23 07:05:15.871902+00	2019-07-23 07:05:25.019726+00	\N		test	bbb2dd53			372		1	\N	{"key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlHZk1BMEdDU3FHU0liM0RRRUJBUVVBQTRHTkFEQ0JpUUtCZ1FEblR3eVFTNVRNOVhqelpaSnRoUHVjalpSYgpsdHlRd1hzZWRCYU1OVjBTWG0xUzFIV2xTSEpDVU9JSGlWaXE4clRwM3VyMU03QVBqV2VObHdZT1NUbHV0TytDCnEydTg5eG4zeGxIaHg2b1IxcUlYejNqTFFvNkJ3S2VHTXl6c1ZYUVY1VkpleDJISHllUTNtaXY3ZFJiSWlmaTkKYVpDK0VDa2JML3VDZHBSQlR3SURBUUFCCi0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo=", "auth": {"is_ok": false, "e_token": "", "challenge": ""}}
+691ab69e-3011-5830-8b53-bfb5fe6bcc76	2019-08-07 10:23:50.864628+00	2019-08-07 10:23:50.8632+00	\N		ecececece	x128			0		0	\N	\N
+966902c2-d745-543f-8c16-f3daae3f7695	2019-08-08 04:53:47.980303+00	2019-08-08 04:53:47.978118+00	\N		fsece	x128			0		0	\N	\N
+9e5b09a5-a01d-5d8e-ad41-704d1144ce74	2019-08-08 04:54:15.801706+00	2019-08-08 05:31:47.782996+00	\N		cecese	x128			393		1	\N	{"key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlHZk1BMEdDU3FHU0liM0RRRUJBUVVBQTRHTkFEQ0JpUUtCZ1FEdDZFZTFIZUVSSlVpQzV5VlB5SkFXeWRWaApsenpZcWtjcHhNODN1eWZUK0pXcFgyNEZURjd0bzgrNmVIQmZibmJ3VExlUU9OQnBZa0tNYjVNWnFpUCtYdFlRCnVDNDNaKzd3cmJ4ZE81c3RlT3YwSTNBU3BQLy8ydXNCSW5GOEUwZ2hFVTlWQkdWZHB4WldVZ2J2ZnhVc2lPSzQKcktTR3BXbWkvSFgrNCtDMVd3SURBUUFCCi0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo=", "auth": {"is_ok": false, "e_token": "", "challenge": ""}}
+64c8b052-6777-574a-8f94-7217a35b7bee	2019-08-08 06:03:04.967488+00	2019-08-08 06:03:04.966286+00	\N		15652446197395654	x283			0		0	\N	\N
+f22bf0be-8d7e-5d65-8cec-fee785b5ba2d	2019-08-08 06:03:05.190469+00	2019-08-08 06:03:05.18952+00	\N		156524462003503072	x283			0		0	\N	\N
+6b405c05-c9d0-5770-85a8-04597ab53e7b	2019-08-08 06:03:48.860589+00	2019-08-08 06:03:48.859524+00	\N		15652446636803400	x283			0		0	\N	\N
+7282bc6a-e8f9-52d5-a418-646fecd207a9	2019-08-08 06:03:49.103535+00	2019-08-08 06:03:49.101682+00	\N		156524466393727776	x283			0		0	\N	\N
+038de53d-e643-59eb-af58-8354a230aed3	2019-08-08 06:09:47.964921+00	2019-08-08 06:09:47.96328+00	\N		156524502276913152	x283			0		0	\N	\N
+1a9e5b01-d63f-54e6-b466-6bc2cbb4d542	2019-08-08 06:11:00.549298+00	2019-08-08 06:11:00.547573+00	\N		asdfasd	x351			0		0	\N	\N
+3cd6f80c-9483-512f-aee6-42fde1ffe76d	2019-08-08 06:16:26.223186+00	2019-08-08 06:20:02.678909+00	\N		yuyuvbyu	x128			392		1	\N	{"key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlHZk1BMEdDU3FHU0liM0RRRUJBUVVBQTRHTkFEQ0JpUUtCZ1FDa1h4Z0d6VWd3czdkaWJIT3FXazk0OVR3awoyRTVCVlRjSm56VXVaRC9IN0IxS1RVY1NZKy82K3JTbWJoczNpN2lpaldObVpiai93ZWZrbnN1Skh2anJtUjIzCnh5aUVBa0hGTTFlRlhYenBkTjlBaWhpN1NFNnM1UUY3c0lOMmdXcGJ4TW54Mk1hb2lQbkdvUzIrQUhFaGN3RlUKU095Q3ArcmcwbFVvTm5jMVB3SURBUUFCCi0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo=", "auth": {"is_ok": false, "e_token": "", "challenge": ""}}
+c0a170b5-19ed-51b9-af06-1ad56e087013	2019-08-08 06:44:31.625552+00	2019-08-08 06:44:31.62296+00	\N		xcfcgdfg	x128			0		0	\N	\N
+1e7dccb7-a970-54d8-b8e2-e9bf631d4f77	2019-08-08 06:48:52.468927+00	2019-08-08 06:48:52.467251+00	\N		lll	x128			0		0	\N	\N
+82dd70a7-eab1-5995-9b2d-fefe9b010f6d	2019-08-08 06:49:39.143333+00	2019-08-08 06:49:39.141908+00	\N		1565247413940	x283			0		0	\N	\N
+3b9af337-5bdb-5d9a-a159-3e7f65db053b	2019-08-08 06:49:39.465482+00	2019-08-08 06:49:39.464278+00	\N		156524741440537248	x283			0		0	\N	\N
+4dd74701-cb91-5525-b6fb-aacd950e2681	2019-08-08 08:32:15.672419+00	2019-08-08 08:32:15.670958+00	\N		1565253570832	x283			0		0	\N	\N
+ac979758-b8c3-5f18-836b-e1b0e1d12daa	2019-08-08 08:32:10.027043+00	2019-08-08 08:32:10.025536+00	\N		1565253565163	x283			0		0	\N	\N
+988fe69d-5aaf-53b7-9d03-e0b679a3e45b	2019-08-08 08:32:10.338941+00	2019-08-08 08:32:10.33758+00	\N		156525356552483264	x283			0		0	\N	\N
+8225f307-f696-5625-8329-2fa8b6e57450	2019-08-08 08:34:48.843735+00	2019-08-08 08:34:48.842743+00	\N		1565253724012	x283			0		0	\N	\N
+95383960-8944-5e22-b912-2e475c98e45c	2019-08-08 08:34:43.452101+00	2019-08-08 08:34:43.45065+00	\N		1565253718632	x283			0		0	\N	\N
+9092bc33-5128-5be6-8108-45089ab4bc1e	2019-08-08 08:34:43.971711+00	2019-08-08 08:34:43.96992+00	\N		156525371913470592	x283			0		0	\N	\N
+34ed17ec-957a-5456-9e7c-b946a39e978e	2019-08-08 08:38:36.335418+00	2019-08-08 08:38:36.334021+00	\N		1565253951434	x283			0		0	\N	\N
+6987616c-c830-5baf-8c07-7b36fbdec881	2019-08-08 08:38:36.631119+00	2019-08-08 08:38:36.629661+00	\N		156525395183761152	x283			0		0	\N	\N
+02e76fa4-da49-53d8-9072-8627f46437c0	2019-08-08 06:09:47.649533+00	2019-08-08 08:38:36.818445+00	\N		1565245022395	x283			415		1	\N	{"key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlHZk1BMEdDU3FHU0liM0RRRUJBUVVBQTRHTkFEQ0JpUUtCZ1FEZHNBTFplL1dDLzFyUll1MCszNVNhTUpMRgpjN1NzSjU0Mlp0RVA2UzNzd00yYTlPTTd2Rlo0eVNUYUcvRWR4cUtQQXl4Q2RoNEVyOGJyL25pNTRIMWtYR0ZHCkZQNHpvNVBFN0tUVlcvS3JFWk9EcUdGZysrSUU4V0ZBS2ozMGx2Qnh0NXlhU01xWjYrTFFuNFJPdkd6d0tnalAKM1BnZ3ZScVRoeEVSQ0dZUml3SURBUUFCCi0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo=", "auth": {"is_ok": false, "e_token": "", "challenge": ""}}
+ccb8e57f-e32c-5f46-b095-29469cb8f469	2019-08-08 08:38:41.702149+00	2019-08-08 08:38:41.701064+00	\N		1565253956837	x283			0		0	\N	\N
+fc122ff8-bf5f-5d40-a8fe-6643a7da360c	2019-08-08 09:54:51.910567+00	2019-08-08 09:54:51.909184+00	\N		1565258527276	x283			0		0	\N	\N
+44fcac70-aef6-5e42-a3cf-f422c76b8624	2019-08-08 09:54:52.15854+00	2019-08-08 09:54:52.157264+00	\N		156525852755771008	x283			0		0	\N	\N
+8559b375-fc75-5dff-93b2-495071beb891	2019-08-08 09:58:14.101495+00	2019-08-08 09:58:14.100145+00	\N		156525872951021088	x283			0		0	\N	\N
+0849b1f2-60a1-5054-a8d4-d5ceaae5636d	2019-08-12 09:57:23.752504+00	2019-08-12 09:57:23.751096+00	\N		15656042860973580	x283			0		0	\N	\N
+d722bffd-f0ef-50c6-bb0f-a1c02664add2	2019-08-08 09:58:19.213997+00	2019-08-08 09:58:19.213017+00	\N		1565258734601	x283			0		0	\N	\N
+4e67649a-50e9-528d-a3a1-46b0df34d70c	2019-08-08 10:35:07.585552+00	2019-08-08 10:35:07.583748+00	\N		1565260942982	x283			0		0	\N	\N
+ba1bcd9d-5816-5c9d-97fa-929616fccf13	2019-08-08 10:35:07.93576+00	2019-08-08 10:35:07.934153+00	\N		156526094342298496	x283			0		0	\N	\N
+ea6f19d7-57f8-5d98-af6d-02d13223395d	2019-08-12 10:18:46.483086+00	2019-08-12 10:18:46.481861+00	\N		156560556686844000	x283			0		0	\N	\N
+92814865-3e6e-535d-a92e-300f8bb9771b	2019-08-08 10:35:12.874144+00	2019-08-08 10:35:12.873092+00	\N		1565260948347	x283			0		0	\N	\N
+8b97330e-3604-5a7b-a0f2-db4a9822b8c1	2019-08-12 06:26:21.099244+00	2019-08-12 06:26:21.092562+00	\N		1565591622923	x283			0		0	\N	\N
+166714a8-a684-50fd-8ab6-82b05089f402	2019-08-12 06:26:21.379998+00	2019-08-12 06:26:21.378883+00	\N		156559162327090496	x283			0		0	\N	\N
+c295c05a-5852-5e73-827a-eec3b603507f	2019-08-12 06:26:26.620719+00	2019-08-12 06:26:26.619732+00	\N		1565591628472	x283			0		0	\N	\N
+3f49d23a-5275-575b-ac84-430e83d5c95b	2019-08-12 09:35:05.137163+00	2019-08-12 09:35:05.136058+00	\N		1565602947426	x283			0		0	\N	\N
+4453ed1b-a8ff-5e8d-aea6-d1aaad881ea2	2019-08-12 09:35:05.38387+00	2019-08-12 09:35:05.382807+00	\N		156560294772802816	x283			0		0	\N	\N
+2e6fbf93-8647-5a47-be6d-7246f37f49c2	2019-08-12 09:35:10.109113+00	2019-08-12 09:35:10.108102+00	\N		1565602952417	x283			0		0	\N	\N
+06409b7b-8ae6-572d-aecd-1586766e5262	2019-08-12 09:38:01.857091+00	2019-08-12 09:38:01.856094+00	\N		1565603124182	x283			0		0	\N	\N
+d189b43b-e62c-5a87-8107-0b740900baf9	2019-08-12 09:38:02.127363+00	2019-08-12 09:38:02.126255+00	\N		156560312448333600	x283			0		0	\N	\N
+80a2221b-81ba-53ae-a7be-2813d654c4a0	2019-08-12 10:18:46.71599+00	2019-08-12 10:18:48.540336+00	\N		15656055691330616	x283			424		1	\N	{"key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlHZk1BMEdDU3FHU0liM0RRRUJBUVVBQTRHTkFEQ0JpUUtCZ1FDMzZPVkF1b3JUVy9KVlplVHNtUEFTNkJjVQpiUHRQTi93SDlwRFliWENOV3JuakNmQ3hXOHV4NWlPZytGYXhsVDdTL2lLR1JUZE5TaStWMjdpZnY0ZEtiZHRaCkx3dkR2UlNUaHVNcUFEMkw3aDlKMXhwRVZLQ0lnWDBQWVh0S3h2YzlPbndtZUh6UlpWUDVENE9iTGR1Z2FNWFEKOEh6aEdqV294NHVGd0JvMzN3SURBUUFCCi0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo=", "auth": {"is_ok": false, "e_token": "", "challenge": ""}}
+ee6829a6-c8ae-55c7-ba01-37e2e9abf52d	2019-08-12 09:38:06.704393+00	2019-08-12 09:38:06.703401+00	\N		1565603129020	x283			0		0	\N	\N
+257430c0-f5d6-56c2-8d6b-c8d875944383	2019-08-12 09:42:20.44797+00	2019-08-12 09:42:20.446939+00	\N		1565603382779	x283			0		0	\N	\N
+9f48fbc8-32f0-5da5-a72c-6eb898f7d561	2019-08-12 09:42:20.758241+00	2019-08-12 09:42:20.756509+00	\N		156560338309573280	x283			0		0	\N	\N
+f20e97f3-3cb8-5fd9-8aed-1bb4fd25996b	2019-08-12 10:18:51.460607+00	2019-08-12 10:18:51.459599+00	\N		15656055738832824	x283			0		0	\N	\N
+3ccdca9a-2610-5438-9d6c-99be7739ff55	2019-08-12 09:42:25.510241+00	2019-08-12 09:42:25.508586+00	\N		1565603387800	x283			0		0	\N	\N
+1ab65029-4926-5dbd-b966-64abc031bfa9	2019-08-12 09:57:18.387862+00	2019-08-12 09:57:18.386613+00	\N		156560427724140448	x283			0		0	\N	\N
+f7bbbb0c-f73b-55a3-941c-ee8293026258	2019-08-12 09:57:18.616883+00	2019-08-12 09:57:18.615469+00	\N		15656042809889318	x283			0		0	\N	\N
+7d944a32-d5d9-5bd6-acae-bda538685623	2019-08-12 10:24:41.945506+00	2019-08-12 10:24:41.944445+00	\N		15656059243529554	x283			0		0	\N	\N
+69142555-257d-5e7b-a44e-53f98678dc3d	2019-08-13 05:42:25.695109+00	2019-08-13 05:42:35.76891+00	\N		ls1012ardb-812	x128			213		1	\N	{"key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlHZk1BMEdDU3FHU0liM0RRRUJBUVVBQTRHTkFEQ0JpUUtCZ1FDdXVHQkhzVkphdXRwNkJQdEtoakNzRjZFaAoxTmdjVDZleFo4UWpjeEUrVGRIRitDVzUrZ2UwdG5EV3NvcThPdEpxbVFiOU5zbExnYUttSTR4YjEySXN4M1lQCk95L0pYai9Pbk9CcnB3WEhjenBpam1LUWxrbUxzTlNoSmVndkZvWVFPOXJxMEJhZFgzdTM1MExJY25uaWVpMVoKWXJWRDJMait0d0g5VFMvUVZRSURBUUFCCi0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo=", "auth": {"is_ok": false, "e_token": "", "challenge": ""}}
+2558b859-d21e-524f-89a0-f72f653631af	2019-08-12 10:24:42.197322+00	2019-08-12 10:24:42.196282+00	\N		156560592466562176	x283			0		0	\N	\N
+05bc51b4-7fb8-5776-97cf-33c565bae310	2019-08-12 10:24:46.991278+00	2019-08-12 10:24:46.985783+00	\N		15656059293975158	x283			0		0	\N	\N
+8af0d3fa-a869-579c-95f5-b4ebbf065a15	2019-08-12 10:28:53.933811+00	2019-08-12 10:28:53.928558+00	\N		15656061761900382	x283			0		0	\N	\N
+77f303bd-3a4c-53a6-b8b0-00d701c4d3fd	2019-08-12 10:28:54.328865+00	2019-08-12 10:28:54.327695+00	\N		156560617678448192	x283			0		0	\N	\N
+00de8d82-d67a-58bf-937a-0d14a17c1e71	2019-08-08 09:58:13.834028+00	2019-08-12 10:28:54.468588+00	\N		1565258729221	x283			426		1	\N	{"key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlHZk1BMEdDU3FHU0liM0RRRUJBUVVBQTRHTkFEQ0JpUUtCZ1FESVJPRlY2UUd5SFluWFY5bUgyS3pXWWdSTgpnSC9XV1FRc1NiNHR2aEZENUgrVkJSblR4V2VOaS9TSkkxMG9sQ0kvdDFUUnp4S01wZFR5M0liTjkzd2VzdzV0CmNxaHNFWDFiaTNwbk9rNlVCTDdrZGU1WWxZK3FQenRNVHM4NU8xZTVyMWducHNGSnArWE9wdmhtWUZQaGhpa1UKazRMeXFRR0Z5bU1Xb1BjT2RRSURBUUFCCi0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo=", "auth": {"is_ok": false, "e_token": "", "challenge": ""}}
+687209ee-76ad-5c67-b825-001bc27011d1	2019-08-12 10:28:59.012061+00	2019-08-12 10:28:59.011029+00	\N		15656061814526174	x283			0		0	\N	\N
+fc6fa164-fb04-51a7-a1a8-43321f0127c0	2019-08-13 02:28:19.48977+00	2019-08-13 09:49:16.85317+00	\N		mytest01	x128			298		1	\N	{"key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlHZk1BMEdDU3FHU0liM0RRRUJBUVVBQTRHTkFEQ0JpUUtCZ1FEdmgvYWZKN2dJcFJWNnl2YXJDanVsRVhISQozSUsxMUlHVkhIOXR5bVBQNjIvcC9Fa3RNUVd5NG1HRk9aRytrNDhSbkZYcjM2bU40UU45OC9FVXVPRFpWM2FVCk1HNmJ2ZVh1T29xSXdobDYrcU0yb3ZzcFJwR1RWaGx6eGx3ekp0Zm51T2ZpRGgvdGlYYUx4Sm15YXA4VmdNREkKaS8rTzBFdkFnWXJPem92ZHhRSURBUUFCCi0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo=", "auth": {"is_ok": true, "e_token": "bf286132c3e55676c6ea80ece17bd3", "challenge": "ed42d723d9"}}
+704b01d1-5370-5ebc-aa48-a667e019eaec	2019-08-15 08:44:05.790154+00	2019-08-15 08:55:53.315558+00	\N		test02	x128			298		1	\N	{"key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlHZk1BMEdDU3FHU0liM0RRRUJBUVVBQTRHTkFEQ0JpUUtCZ1FET1FZTFJUUjBvUDRaMWR0dEJhVjVjUlBMYQpsaUl3c3hFdWVaTXA0NnREQTZMc2YvYkdOQTRPRGNqUG9HZ2pZZ01oQngzeWRVak14YUUwNjRPdHVuRXIxcDZhClpBczlSVU4wNEM5eUxaNXZMMkl3RHhZKzJ1SFdIN0dDWk91UURMVExIZTFKdFZhWG5GU1pxL0ZaN0hueEd3STUKZnFyenNIUkhCSFR0YnF5L0h3SURBUUFCCi0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo=", "auth": {"is_ok": true, "e_token": "081d001d82870661551cf9367bf6fb", "challenge": "3f3a788c06"}}
+7610d6a9-bdea-56d3-8092-4be79f9cc422	2019-08-21 08:32:52.343908+00	2019-08-21 08:33:05.557103+00	\N		cdsvcsdcss	x128			393		1	\N	{"key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlHZk1BMEdDU3FHU0liM0RRRUJBUVVBQTRHTkFEQ0JpUUtCZ1FEYTRsWTZJRTBNY041WVZWZlVKMDI2YkE2OQpKM2JydDZDZ2JsNWI2NW9lK1QxUXJ0VXczOXhlNlN6bzUxcGFUQ3lzV1NCU1dhQUJaSUR5dW9RbU1XU0I3aTV6ClZRVlpXZGRDWW84WHJUbzllRTVmTmxBNXRwLzdadGo5NEpoaW13MkdVZEpHbUhsd1R2TjVuWGFPSnlNeHhVNmgKRGpoRzdaOFBHL2V2WkI5TWtRSURBUUFCCi0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo=", "auth": {"is_ok": false, "e_token": "", "challenge": ""}}
+\.
+
+
+--
+-- Data for Name: fuse_configs; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.fuse_configs (id, created_at, updated_at, deleted_at, name, oem_id, key_id, data) FROM stdin;
+c1541c66-ad42-4e4e-bfa0-b9cfc0f681b5	2019-07-20 00:16:59.293347+00	2019-07-20 00:16:59.293347+00	\N	123	x48	cabb393b-f952-461b-864a-e97e3fec9c6d	{"config": "---------------------------------------------------\\n# Specify the platform. [Mandatory]\\n# Choose Platform - LS1/LS1043/LS1012/LS1046\\nPLATFORM=LS1012\\n---------------------------------------------------\\n# GPIO Pin to be set for raising POVDD [Optional]\\nPOVDD_GPIO=\\n---------------------------------------------------\\n# One time programmable master key flags in binary form.[Mandatory]\\n# 0000 -> Program default minimal OTPMK value\\n# 0001 -> Program random OTPMK value\\n# 0010 -> Program user supplied OTPMK value\\n# 0101 -> Program random OTPMK value with pre-programmed minimal value\\n# 0110 -> Program user supplied OTPMK value with pre-programmed minimal value\\n\\n# 1xxx -> Don't blow OTPMK\\nOTPMK_FLAGS=0000\\n# One time programmable master key value.\\n# [Optional dependent on flags, Mandatory in case OTPMK_FLAGS=\\"0010\\" or \\"0110\\"]\\nOTPMK_0=\\nOTPMK_1=\\nOTPMK_2=\\nOTPMK_3=\\nOTPMK_4=\\nOTPMK_5=\\nOTPMK_6=\\nOTPMK_7=\\n---------------------------------------------------\\n# Specify OEM UIDs. [Optional]\\n# e.g OEM_UID_0=11111111\\nOEM_UID_0=\\nOEM_UID_1=\\nOEM_UID_2=\\nOEM_UID_3=\\nOEM_UID_4=\\n---------------------------------------------------\\n# Specify Debug challenge and response values. [Optional]\\n# e.g DCV_0=11111111\\nDCV_0=\\nDCV_1=\\nDRV_0=\\nDRV_1=\\n---------------------------------------------------\\n# Specify Debug Level in binary form. [Optional]\\n# 000 -> Wide open: Debug portals are enabled unconditionally.\\n# 001 -> Conditionally open via challenge response, without notification.\\n# 01x -> Conditionally open via challenge response, with notification.\\n# 1xx -> Closed. All debug portals are disabled.\\nDBG_LVL=\\n---------------------------------------------------\\n# System Configuration register bits in binary form [Optional]\\n# WP (OEM write protect)\\n# ITS (Intent to Secure)\\n# NSEC (Non secure)\\n# ZD (ZUC Disable)\\n# K0,K1,K2 (Key revocation bits)\\n# FR0 (Field return 0)\\n# FR1 (Field return 1)\\nWP=\\nITS=\\nNSEC=\\nZD=\\nK0=\\nK1=\\nK2=\\nFR0=\\nFR1=\\n---------------------------------------------------\\n# Specify the output fuse provisioning file name. (Default:fuse_scr.bin) [Optional]\\nOUTPUT_FUSE_FILENAME=fuse_scr.bin\\n---------------------------------------------------\\nSRKH_0=ba4504bd\\nSRKH_1=98e2f16b\\nSRKH_2=eb8fbf81\\nSRKH_3=f1068bc4\\nSRKH_4=5e3ae294\\nSRKH_5=ef3022a5\\nSRKH_6=c80b0cbc\\nSRKH_7=6f6e2d32", "description": ""}
+\.
+
+
+--
+-- Data for Name: projects; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.projects (id, created_at, updated_at, deleted_at, name, number, customer_id, model_id, oem_id, fuse_config_id, is_fuse, data) FROM stdin;
+d81dc832-d77e-4765-a8fb-a49b6219292b	2019-07-20 00:15:40.640898+00	2019-07-20 00:15:40.640898+00	\N	33	234	\N	391	x48	00000000-0000-0000-0000-000000000000	f	{"key": "", "tags": [], "sk_pub": ""}
+\.
+
+
+--
+-- Data for Name: root_keys; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.root_keys (id, created_at, updated_at, deleted_at, name, oem_id, key_hash, data) FROM stdin;
+cabb393b-f952-461b-864a-e97e3fec9c6d	2019-07-20 00:14:45.180459+00	2019-07-20 00:14:45.180459+00	\N	12	x48	4c06b643f27c91fca58ee2f2fb532f8e4f07b6d2	{"key": "-----BEGIN RSA PRIVATE KEY-----\\nMIIEogIBAAKCAQEAvS7TkNTt5kb2v8Ekfrjbrk3fPXOlftxCpCCDc9JY5SnVvBXZ\\n+ncDx9uCNO7Qr0FI36oWD5VxqqMjD6AZSWrAAlyCLyiDLyIsm2pDF7ygZvri+wS0\\nlXbiK0nnzCOVsk/JHrocTkB5QC6gEBDBbUQokTHDtdmTa4sebYMyXTBf1G7kE2h6\\nlu9ANuAeJNj9tWkB7P9TGWl5B8nTCbptXDVtCNAGk1S2cEgCQtBpV/QCkx/p3ByD\\nF4S/wnwj3Ufool/ZbVrC8Vx4qiXZltoTmH9NukwWzM+Wj3TCvkCaepdRs5Xevmsx\\nPrD3g5wgV1m0TMO2mImoNbHpyJz2gJ3LpGJIHwIDAQABAoIBAQCx11s7Q2+AkiVT\\njZVpKw4YhUve0OA6qYRcFdR9BLhcdT9fWItZUJhVQJzedcHnfk+rMpEahTodVs6W\\n2cHrqlZl4eDfxA3OOSoFz5bSsZd4N1E49+tqth9W4lrtJGaNAUPnhr0lMqbJFwuR\\nDq9GsFQSad25DZfv+Q/ZkwO9ZsQvRZFusYDe5gMAHvO4RXHvzSSnpKsRWUnuSCJk\\nKXll4E9WeEAu3iF2dbH8+Vk9MRaetdGzz+6OTlBZUhgHZqd2axNDqFBY/gzktkiz\\ntAo7ijH7R22En0DcVAhhb4Hovogh0LB4v3/SNKvz2D9fu1AMKcXiZ0x0z35EnIdg\\nTTctwqQBAoGBAOGlBFCJFrzUBbYBANxn0gk/liH9mScA2xW8QYFbXGTUQf/PYHBM\\noqNeulA3tQh2Rg2DAsagf4ZZBXXHNXpDI6M9b0qhIdX1MkzcQD/ndD1fY+OrPbXW\\nviHEVLKEezVdhcg9ynRwwmpTNwCV1VU3s/d90WIWgNMu3MA4I55ErNLBAoGBANai\\nGrNG9f3K5NQ24yhLods86bqkDm/Y6p1Wux4itvhajXeHBx7+av6+JJDnjte9qNOQ\\ntVWNvO10W2Hjan69TP36wBJrfpeGoaau2LrtfijVACoKA61Y2uj05wFsjP+UfR0U\\nF2kgSbW+H5FHaAy+MQN//OydurL9O9t6WuX07TLfAoGARNtVcLoUzTSqNXsi5x9r\\ncdUMnHzF4qgZMw3Ks43MqRw4s7Z1yG8qZk4+7sHBJb7p66+iBjjuEXJS/zj2McQR\\nOPxDXPPE3oS/f8LqfFXGHABi/BPCdh380VMXQY66BnPuokdw442RVl7kdvJCMooY\\nChtD7PnPACLZzHKVM/PjBUECf2tQogkBcf1zdPameu2q40K7MiIf5RgHXUdOFkD7\\nGoESxaj92pGko9q7N408Oi+kpMUjlYcxV0Vi6E4JZzX3cIeM2HxdQu6AYlL1GWhd\\nVrcTyQE8AJqr0sinqtkLbXRcyjG/2fS2MCSu6xm4mk3Eyrz1QYENXEwiUctrYgeY\\nbwECgYEAzIHNkUGJG5vlDhldVejEU8tZ/vlqI5iYfVyyPYIZ6fDjIkCZtvTodshQ\\n6eoJ3EFKAn1MYCDIDcrtWFeUZoSpoNkynhQneDdpy1pTscriFKo+enI1qUMs7h8N\\nnMF4sen9TOUcrlAV15B5ni+SRyILqpSntH3qghNgerKfNQGE1XY=\\n-----END RSA PRIVATE KEY-----\\n", "description": ""}
+\.
+
+
+--
+-- Name: customers customers_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.customers
+    ADD CONSTRAINT customers_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: device_models device_models_model_id_key; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.device_models
+    ADD CONSTRAINT device_models_model_id_key UNIQUE (model_id);
+
+
+--
+-- Name: device_models device_models_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.device_models
+    ADD CONSTRAINT device_models_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: devices devices_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.devices
+    ADD CONSTRAINT devices_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: fuse_configs fuse_configs_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.fuse_configs
+    ADD CONSTRAINT fuse_configs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: projects projects_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.projects
+    ADD CONSTRAINT projects_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: root_keys root_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.root_keys
+    ADD CONSTRAINT root_keys_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: fuseconfigname_oemid; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX fuseconfigname_oemid ON public.fuse_configs USING btree (name, oem_id);
+
+
+--
+-- Name: idx_name_oemid; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX idx_name_oemid ON public.projects USING btree (name, oem_id);
+
+
+--
+-- Name: idx_oemid_keyhash; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX idx_oemid_keyhash ON public.root_keys USING btree (oem_id, key_hash);
+
+
+--
+-- Name: idx_rootkeyname_oemid; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX idx_rootkeyname_oemid ON public.root_keys USING btree (name, oem_id);
+
+
+--
+-- PostgreSQL database dump complete
+--
+

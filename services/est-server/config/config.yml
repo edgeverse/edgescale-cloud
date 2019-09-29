@@ -1,0 +1,15 @@
+---
+  
+addr: :443
+certfile: /etc/est/est.crt
+keyfile: /etc/est/est.key
+trustcafile: /etc/est/trustca.crt
+default_days: 365
+
+rootca:
+  certfile: /etc/est/ca/RootCA.crt
+  keyfile: /etc/est/ca/RootCA.key
+
+ocsp_server:
+  - https://int.e-est.edgescale.org/.well-known/ocsp
+

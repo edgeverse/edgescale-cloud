@@ -1,0 +1,39 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: openfaas-util
+    component: redis
+  name: redis
+  namespace: "openfaas-util"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name:  redis
+        resources:
+          requests:
+            memory: "120Mi"
+        image: redis:5.0 
+        imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: /etc/redis/redis.conf
+          name: redis-volume
+        ports:
+        - containerPort: 6379
+          hostPort: 6379
+        env:
+        - name: POSTGRES_PASSWORD
+          value: edgescale
+        command: ["redis-server"]
+        args:
+          - /etc/redis/redis.conf
+      volumes:
+      - name: redis-volume
+        hostPath:
+          path: /etc/edgescale/etc/redis/redis.conf

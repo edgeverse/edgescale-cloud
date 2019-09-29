@@ -1,0 +1,35 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: openfaas-util
+    component: haproxy
+  name: haproxy
+  namespace: "openfaas-util"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: haproxy
+    spec:
+      hostNetwork: true
+#      dnsPolicy: ClusterFirst
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+      - name:  haproxy
+        image: haproxy
+        imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: /etc/ssl
+          name: ssl-volume
+        - mountPath: /usr/local/etc/haproxy/haproxy.cfg
+          name: haproxy-volume
+      volumes:
+      - name: ssl-volume
+        hostPath:
+          path: /etc/ssl
+      - name: haproxy-volume
+        hostPath:
+          path: /etc/edgescale/etc/haproxy/haproxy.cfg

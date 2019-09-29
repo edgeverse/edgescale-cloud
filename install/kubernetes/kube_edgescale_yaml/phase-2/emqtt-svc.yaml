@@ -1,0 +1,23 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: openfaas-util
+    component: emqttd
+  name: emqtt-external
+  namespace: "openfaas-util"
+spec:
+  type: ClusterIP
+  ports:
+    - name: mqtt2
+      port: 8883
+      protocol: TCP
+      targetPort: 8883
+    - name: mqtt1
+      port: 1883
+      protocol: TCP
+      targetPort: 1883
+  selector:
+  selector:
+    app: emqttd

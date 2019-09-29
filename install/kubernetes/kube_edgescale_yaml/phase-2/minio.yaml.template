@@ -1,0 +1,37 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: openfaas-util
+    component: minio
+  name: minio
+  namespace: "openfaas-util"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      containers:
+      - name:  minio
+        resources:
+          requests:
+            memory: "120Mi"
+        image: HARBOR_URL/HARBOR_REPO_SUB_DIR/minio-api
+        imagePullPolicy: Always
+        env:
+        - name: MINIO_ACCESS_KEY
+          value: access_key
+        - name: MINIO_SECRET_KEY
+          value: secret_key
+        ports:
+        - containerPort: 9000
+          hostPort: 9000
+        command: ["/root/minio_transfer_server"]
+        args:
+          - server
+          - /data
+      imagePullSecrets:
+        - name: kube-repos

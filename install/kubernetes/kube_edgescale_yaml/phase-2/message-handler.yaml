@@ -1,0 +1,22 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: openfaas-util
+    component: message-handler
+  name: message-handler
+  namespace: "openfaas-util"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: message-handler
+    spec:
+      containers:
+      - name:  message-handler
+        image: pcloud.edgescale.org/pcloud/message-handler
+        imagePullPolicy: Always
+      imagePullSecrets:
+        - name: kube-repos

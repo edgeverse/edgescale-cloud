@@ -1,0 +1,28 @@
+Files: 
+ faas/*
+Source: 
+ https://github.com/openfaas/faas
+Version: v0.14.0
+Copyright:
+ Copyright (c) 2016-2018 Alex Ellis
+ Copyright (c) 2018 OpenFaaS Author(s)
+License: MIT License
+ https://github.com/openfaas/faas/blob/master/LICENSE
+
+Files:
+ kong/*
+Source:
+ https://github.com/Kong/kong
+Version: v0.7.6
+Copyright:
+ Copyright (C) Kong Inc.
+License: Apache License 2.0
+ https://github.com/Kong/kong/blob/master/LICENSE
+
+Files:
+ build/*
+ install/*
+ services/*
+Copyright:
+ Copyright 2018-2019 NXP
+License: Apache License 2.0 and MIT License

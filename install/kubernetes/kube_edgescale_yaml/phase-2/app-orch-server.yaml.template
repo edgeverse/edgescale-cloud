@@ -1,0 +1,27 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: openfaas-util
+    component: app-orch-svr
+  name: app-orch-svr
+  namespace: "openfaas-util"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: app-orch-svr
+    spec:
+      containers:
+      - name:  app-orch-svr
+        image: HARBOR_URL/HARBOR_REPO_SUB_DIR/app-orchestration-server
+        imagePullPolicy: Always
+        env:
+        - name: dbhost
+          value: postgres-external.openfaas-util
+        - name: MQTT
+          value: emqtt-external.openfaas-util
+      imagePullSecrets:
+        - name: kube-repos

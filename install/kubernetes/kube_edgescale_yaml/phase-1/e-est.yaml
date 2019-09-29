@@ -1,0 +1,36 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: openfaas-util
+    component: e-est
+  name: e-est
+  namespace: "openfaas-util"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: e-est
+    spec:
+      containers:
+      - name:  e-est
+        resources:
+          requests:
+            memory: "120Mi"
+        image: pcloud.edgescale.org/pcloud/est-server
+        imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: /etc/est
+          name: e-est-volume
+        ports:
+        - containerPort: 443
+          hostPort: 10443
+          hostIP: 127.0.0.1
+      volumes:
+      - name: e-est-volume
+        hostPath:
+          path: /etc/edgescale/etc/e-est
+      imagePullSecrets:
+        - name: kube-repos

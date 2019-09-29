@@ -1,0 +1,38 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: openfaas-util
+    component: postgres
+  name: postgres
+  namespace: "openfaas-util"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name:  postgres
+        resources:
+          requests:
+            memory: "120Mi"
+        image: postgres:11
+        imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: edge-postgresql
+        ports:
+        - containerPort: 5432
+          hostPort: 5432
+        env:
+        - name: POSTGRES_PASSWORD
+          value: edgescale
+        - name: KONG_PASSWORD
+          value: kong
+      volumes:
+      - name: edge-postgresql
+        hostPath:
+          path: /var/edgescale/postgresql/data

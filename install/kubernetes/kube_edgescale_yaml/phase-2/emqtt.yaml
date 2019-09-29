@@ -1,0 +1,53 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: openfaas-util
+    component: emqttd
+  name: emqttd
+  namespace: "openfaas-util"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: emqttd
+    spec:
+#      hostNetwork: true
+      containers:
+      - name:  emqttd
+        resources:
+          requests:
+            memory: "120Mi"
+        image: tldzyx/emqttd
+        imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: /opt/emqttd/etc/certs
+          name: emqttd-certs
+        - mountPath: /opt/emqttd/etc/emq.conf
+          name: emqttd-emqconf
+        - mountPath: /opt/emqttd/etc/acl.conf
+          name: emqttd-aclconf
+        - mountPath: /opt/emqttd/etc/ssl.conf
+          name: emqttd-sslconf
+        ports:
+        - containerPort: 8883
+          hostPort: 8883
+        - containerPort: 443
+          hostPort: 443
+          hostIP: 127.0.0.1
+      volumes:
+      - name: emqttd-certs
+        hostPath:
+          path: /etc/edgescale/etc/emqttd/certs
+      - name: emqttd-emqconf
+        hostPath:
+          path: /etc/edgescale/etc/emqttd/emq.conf
+      - name: emqttd-aclconf
+        hostPath:
+          path: /etc/edgescale/etc/emqttd/acl.conf
+      - name: emqttd-sslconf
+        hostPath:
+          path: /etc/edgescale/etc/emqttd/ssl.conf
+

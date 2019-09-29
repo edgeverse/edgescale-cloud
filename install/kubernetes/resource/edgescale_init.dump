@@ -1,0 +1,5835 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 11.5 (Debian 11.5-1.pgdg90+1)
+-- Dumped by pg_dump version 11.5 (Debian 11.5-1.pgdg90+1)
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: sslinfo; Type: EXTENSION; Schema: -; Owner: 
+--
+
+CREATE EXTENSION IF NOT EXISTS sslinfo WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION sslinfo; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION sslinfo IS 'information about SSL certificates';
+
+
+--
+-- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner: 
+--
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
+
+
+--
+-- Name: cipher_suite; Type: TYPE; Schema: public; Owner: root
+--
+
+CREATE TYPE public.cipher_suite AS ENUM (
+    'TLS-RSA-AES128-SHA256',
+    'TLS-RSA-AES128-GCM-SHA256'
+);
+
+
+ALTER TYPE public.cipher_suite OWNER TO root;
+
+--
+-- Name: engine; Type: TYPE; Schema: public; Owner: root
+--
+
+CREATE TYPE public.engine AS ENUM (
+    'training',
+    'interference'
+);
+
+
+ALTER TYPE public.engine OWNER TO root;
+
+--
+-- Name: protocal; Type: TYPE; Schema: public; Owner: root
+--
+
+CREATE TYPE public.protocal AS ENUM (
+    'https',
+    'mqtt'
+);
+
+
+ALTER TYPE public.protocal OWNER TO root;
+
+--
+-- Name: server_certificate_format; Type: TYPE; Schema: public; Owner: root
+--
+
+CREATE TYPE public.server_certificate_format AS ENUM (
+    'pem'
+);
+
+
+ALTER TYPE public.server_certificate_format OWNER TO root;
+
+--
+-- Name: signing_certificate_format; Type: TYPE; Schema: public; Owner: root
+--
+
+CREATE TYPE public.signing_certificate_format AS ENUM (
+    'pem'
+);
+
+
+ALTER TYPE public.signing_certificate_format OWNER TO root;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: config; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.config (
+    text json
+);
+
+
+ALTER TABLE public.config OWNER TO root;
+
+--
+-- Name: dcca_access_records; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_access_records (
+    id integer NOT NULL,
+    uid integer,
+    username character varying(255),
+    is_admin integer,
+    auth_at timestamp without time zone DEFAULT now(),
+    method_arn character varying(256)
+);
+
+
+ALTER TABLE public.dcca_access_records OWNER TO root;
+
+--
+-- Name: dcca_access_records_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_access_records_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_access_records_id_seq OWNER TO root;
+
+--
+-- Name: dcca_access_records_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_access_records_id_seq OWNED BY public.dcca_access_records.id;
+
+
+--
+-- Name: dcca_account_types; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_account_types (
+    id integer NOT NULL,
+    name character varying(16) NOT NULL,
+    description character varying(32),
+    is_external boolean DEFAULT true NOT NULL
+);
+
+
+ALTER TABLE public.dcca_account_types OWNER TO root;
+
+--
+-- Name: dcca_account_type_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_account_type_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_account_type_id_seq OWNER TO root;
+
+--
+-- Name: dcca_account_type_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_account_type_id_seq OWNED BY public.dcca_account_types.id;
+
+
+--
+-- Name: dcca_accounts; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_accounts (
+    id integer NOT NULL,
+    company_name character varying(32),
+    telephone character varying(16),
+    email character varying(64) NOT NULL,
+    job_title character varying(32),
+    account_type_id integer,
+    first_name character varying(16),
+    last_name character varying(16),
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    status integer DEFAULT 0 NOT NULL,
+    applied_at timestamp without time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.dcca_accounts OWNER TO root;
+
+--
+-- Name: dcca_accounts_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_accounts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_accounts_id_seq OWNER TO root;
+
+--
+-- Name: dcca_accounts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_accounts_id_seq OWNED BY public.dcca_accounts.id;
+
+
+--
+-- Name: dcca_ai_engines; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_ai_engines (
+    id uuid DEFAULT public.uuid_generate_v1mc() NOT NULL,
+    name character varying(32) NOT NULL,
+    category public.engine NOT NULL,
+    owner_id integer NOT NULL,
+    is_public boolean DEFAULT false NOT NULL,
+    created_at timestamp without time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at timestamp without time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    description text DEFAULT ''::text NOT NULL,
+    url character varying(256)
+);
+
+
+ALTER TABLE public.dcca_ai_engines OWNER TO root;
+
+--
+-- Name: dcca_ai_models; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_ai_models (
+    id uuid DEFAULT public.uuid_generate_v1mc() NOT NULL,
+    name character varying(64) DEFAULT ''::character varying NOT NULL,
+    owner_id integer NOT NULL,
+    is_public boolean DEFAULT false NOT NULL,
+    url text DEFAULT ''::text NOT NULL,
+    created_at timestamp without time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at timestamp without time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    description text DEFAULT ''::text NOT NULL,
+    storage text DEFAULT ''::text NOT NULL
+);
+
+
+ALTER TABLE public.dcca_ai_models OWNER TO root;
+
+--
+-- Name: dcca_api_access_records; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_api_access_records (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    access_date date,
+    record json
+);
+
+
+ALTER TABLE public.dcca_api_access_records OWNER TO root;
+
+--
+-- Name: dcca_api_access_records_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_api_access_records_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_api_access_records_id_seq OWNER TO root;
+
+--
+-- Name: dcca_api_access_records_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_api_access_records_id_seq OWNED BY public.dcca_api_access_records.id;
+
+
+--
+-- Name: dcca_app_mirror; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_app_mirror (
+    id integer NOT NULL,
+    name character varying(64) NOT NULL,
+    is_public boolean DEFAULT false NOT NULL,
+    description character varying(128),
+    user_id integer,
+    created_at timestamp without time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+
+ALTER TABLE public.dcca_app_mirror OWNER TO root;
+
+--
+-- Name: dcca_app_mirror_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_app_mirror_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_app_mirror_id_seq OWNER TO root;
+
+--
+-- Name: dcca_app_mirror_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_app_mirror_id_seq OWNED BY public.dcca_app_mirror.id;
+
+
+--
+-- Name: dcca_applications; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_applications (
+    id integer NOT NULL,
+    name character varying(64) NOT NULL,
+    display_name character varying(64),
+    description character varying(256),
+    likes integer DEFAULT 0,
+    stars smallint DEFAULT 0,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    vendor_id integer,
+    logical_delete_flag boolean DEFAULT false NOT NULL,
+    image character varying(64),
+    is_public boolean DEFAULT false NOT NULL,
+    owner_id integer,
+    documents text,
+    in_store boolean DEFAULT false
+);
+
+
+ALTER TABLE public.dcca_applications OWNER TO root;
+
+--
+-- Name: TABLE dcca_applications; Type: COMMENT; Schema: public; Owner: root
+--
+
+COMMENT ON TABLE public.dcca_applications IS 'Applications for device';
+
+
+--
+-- Name: dcca_applications_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_applications_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_applications_id_seq OWNER TO root;
+
+--
+-- Name: dcca_applications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_applications_id_seq OWNED BY public.dcca_applications.id;
+
+
+--
+-- Name: dcca_apply_apps; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_apply_apps (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    approved boolean DEFAULT false,
+    comments text,
+    app_id integer,
+    op_times smallint DEFAULT 0,
+    status smallint DEFAULT 0
+);
+
+
+ALTER TABLE public.dcca_apply_apps OWNER TO root;
+
+--
+-- Name: dcca_apply_apps_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_apply_apps_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_apply_apps_id_seq OWNER TO root;
+
+--
+-- Name: dcca_apply_apps_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_apply_apps_id_seq OWNED BY public.dcca_apply_apps.id;
+
+
+--
+-- Name: dcca_ass_ai_model_engine; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_ass_ai_model_engine (
+    model_id uuid NOT NULL,
+    engine_id uuid NOT NULL
+);
+
+
+ALTER TABLE public.dcca_ass_ai_model_engine OWNER TO root;
+
+--
+-- Name: dcca_ass_app_tag; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_ass_app_tag (
+    application_id integer NOT NULL,
+    tag_id integer NOT NULL
+);
+
+
+ALTER TABLE public.dcca_ass_app_tag OWNER TO root;
+
+--
+-- Name: dcca_ass_device_group; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_ass_device_group (
+    group_id uuid NOT NULL,
+    device_id integer NOT NULL
+);
+
+
+ALTER TABLE public.dcca_ass_device_group OWNER TO root;
+
+--
+-- Name: dcca_ass_device_tag; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_ass_device_tag (
+    device_id integer NOT NULL,
+    tag_id integer NOT NULL
+);
+
+
+ALTER TABLE public.dcca_ass_device_tag OWNER TO root;
+
+--
+-- Name: dcca_ass_device_task; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_ass_device_task (
+    device_id integer NOT NULL,
+    task_id integer NOT NULL,
+    status_payload json
+);
+
+
+ALTER TABLE public.dcca_ass_device_task OWNER TO root;
+
+--
+-- Name: dcca_ass_host_model; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_ass_host_model (
+    id integer NOT NULL,
+    host_id integer NOT NULL,
+    model_id integer NOT NULL
+);
+
+
+ALTER TABLE public.dcca_ass_host_model OWNER TO root;
+
+--
+-- Name: dcca_ass_host_model_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_ass_host_model_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_ass_host_model_id_seq OWNER TO root;
+
+--
+-- Name: dcca_ass_host_model_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_ass_host_model_id_seq OWNED BY public.dcca_ass_host_model.id;
+
+
+--
+-- Name: dcca_ass_model_service; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_ass_model_service (
+    model_id integer NOT NULL,
+    service_id integer NOT NULL
+);
+
+
+ALTER TABLE public.dcca_ass_model_service OWNER TO root;
+
+--
+-- Name: dcca_ass_model_software; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_ass_model_software (
+    model_id integer NOT NULL,
+    software_id integer NOT NULL,
+    id integer NOT NULL
+);
+
+
+ALTER TABLE public.dcca_ass_model_software OWNER TO root;
+
+--
+-- Name: dcca_ass_model_software_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_ass_model_software_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_ass_model_software_id_seq OWNER TO root;
+
+--
+-- Name: dcca_ass_model_software_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_ass_model_software_id_seq OWNED BY public.dcca_ass_model_software.id;
+
+
+--
+-- Name: dcca_ass_role_perm; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_ass_role_perm (
+    role_id integer NOT NULL,
+    perm_id integer NOT NULL
+);
+
+
+ALTER TABLE public.dcca_ass_role_perm OWNER TO root;
+
+--
+-- Name: dcca_ass_solution_images; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_ass_solution_images (
+    id integer NOT NULL,
+    solution character varying(64) NOT NULL,
+    model_id integer NOT NULL,
+    image text NOT NULL,
+    version character varying(64) NOT NULL,
+    link text NOT NULL,
+    is_public boolean DEFAULT false NOT NULL,
+    in_s3 boolean DEFAULT true,
+    public_key text,
+    is_signed boolean DEFAULT false,
+    logical_delete_flag boolean DEFAULT false,
+    owner_id integer,
+    have_installer boolean DEFAULT false NOT NULL
+);
+
+
+ALTER TABLE public.dcca_ass_solution_images OWNER TO root;
+
+--
+-- Name: dcca_ass_solution_images_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_ass_solution_images_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_ass_solution_images_id_seq OWNER TO root;
+
+--
+-- Name: dcca_ass_solution_images_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_ass_solution_images_id_seq OWNED BY public.dcca_ass_solution_images.id;
+
+
+--
+-- Name: dcca_ass_solution_tag; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_ass_solution_tag (
+    solution_id integer NOT NULL,
+    tag_id integer NOT NULL
+);
+
+
+ALTER TABLE public.dcca_ass_solution_tag OWNER TO root;
+
+--
+-- Name: dcca_ass_user_device; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_ass_user_device (
+    user_id integer NOT NULL,
+    device_id integer NOT NULL
+);
+
+
+ALTER TABLE public.dcca_ass_user_device OWNER TO root;
+
+--
+-- Name: dcca_ass_user_role; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_ass_user_role (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    role_id integer NOT NULL
+);
+
+
+ALTER TABLE public.dcca_ass_user_role OWNER TO root;
+
+--
+-- Name: dcca_ass_user_role_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_ass_user_role_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_ass_user_role_id_seq OWNER TO root;
+
+--
+-- Name: dcca_ass_user_role_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_ass_user_role_id_seq OWNED BY public.dcca_ass_user_role.id;
+
+
+--
+-- Name: dcca_ass_user_solution; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_ass_user_solution (
+    user_id integer NOT NULL,
+    solution_id integer NOT NULL
+);
+
+
+ALTER TABLE public.dcca_ass_user_solution OWNER TO root;
+
+--
+-- Name: dcca_ass_user_task; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_ass_user_task (
+    user_id integer NOT NULL,
+    task_id integer NOT NULL
+);
+
+
+ALTER TABLE public.dcca_ass_user_task OWNER TO root;
+
+--
+-- Name: dcca_ass_user_vendor; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_ass_user_vendor (
+    user_id integer NOT NULL,
+    vendor_id integer NOT NULL
+);
+
+
+ALTER TABLE public.dcca_ass_user_vendor OWNER TO root;
+
+--
+-- Name: dcca_audit; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_audit (
+    id integer NOT NULL,
+    user_id integer,
+    created_at timestamp without time zone DEFAULT now(),
+    approved boolean DEFAULT false,
+    comments text,
+    approve_type character varying(20) NOT NULL,
+    approve_item integer NOT NULL,
+    to_public boolean DEFAULT false,
+    status boolean DEFAULT false
+);
+
+
+ALTER TABLE public.dcca_audit OWNER TO root;
+
+--
+-- Name: dcca_audit_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_audit_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_audit_id_seq OWNER TO root;
+
+--
+-- Name: dcca_audit_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_audit_id_seq OWNED BY public.dcca_audit.id;
+
+
+--
+-- Name: dcca_builder; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_builder (
+    id smallint NOT NULL,
+    uid smallint NOT NULL,
+    name character varying(40) NOT NULL,
+    category character varying(10) NOT NULL,
+    config jsonb,
+    created timestamp without time zone DEFAULT now(),
+    updated timestamp without time zone DEFAULT now(),
+    description character varying(100)
+);
+
+
+ALTER TABLE public.dcca_builder OWNER TO root;
+
+--
+-- Name: dcca_builder_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_builder_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_builder_id_seq OWNER TO root;
+
+--
+-- Name: dcca_builder_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_builder_id_seq OWNED BY public.dcca_builder.id;
+
+
+--
+-- Name: dcca_certificates; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_certificates (
+    id integer NOT NULL,
+    body text NOT NULL,
+    private_key text NOT NULL,
+    chain text,
+    user_id integer NOT NULL
+);
+
+
+ALTER TABLE public.dcca_certificates OWNER TO root;
+
+--
+-- Name: dcca_certificates_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_certificates_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_certificates_id_seq OWNER TO root;
+
+--
+-- Name: dcca_certificates_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_certificates_id_seq OWNED BY public.dcca_certificates.id;
+
+
+--
+-- Name: dcca_ci_tasks; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_ci_tasks (
+    id integer NOT NULL,
+    code character varying(255) NOT NULL,
+    status integer DEFAULT 0
+);
+
+
+ALTER TABLE public.dcca_ci_tasks OWNER TO root;
+
+--
+-- Name: dcca_ci_tasks_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_ci_tasks_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_ci_tasks_id_seq OWNER TO root;
+
+--
+-- Name: dcca_ci_tasks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_ci_tasks_id_seq OWNED BY public.dcca_ci_tasks.id;
+
+
+--
+-- Name: dcca_common_services; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_common_services (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    type character varying(32),
+    name character varying(32),
+    url character varying(512),
+    port character varying(5),
+    user_id integer NOT NULL,
+    access_token character varying(128)
+);
+
+
+ALTER TABLE public.dcca_common_services OWNER TO root;
+
+--
+-- Name: dcca_continents; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_continents (
+    id integer NOT NULL,
+    name character varying(16) NOT NULL,
+    short_name character varying(2) NOT NULL
+);
+
+
+ALTER TABLE public.dcca_continents OWNER TO root;
+
+--
+-- Name: dcca_continents_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_continents_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_continents_id_seq OWNER TO root;
+
+--
+-- Name: dcca_continents_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_continents_id_seq OWNED BY public.dcca_continents.id;
+
+
+--
+-- Name: dcca_customers; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_customers (
+    id uuid DEFAULT public.uuid_generate_v1mc() NOT NULL,
+    name character varying(32) NOT NULL,
+    owner_id integer NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
+    created_at timestamp without time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at timestamp without time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    description text DEFAULT ''::text NOT NULL
+);
+
+
+ALTER TABLE public.dcca_customers OWNER TO root;
+
+--
+-- Name: dcca_deploy_recoreds; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_deploy_recoreds (
+    id integer NOT NULL,
+    event json,
+    template json,
+    raw_k8s_result json,
+    parsed_k8s_result json,
+    resource character varying(256),
+    task_id integer,
+    device_id integer
+);
+
+
+ALTER TABLE public.dcca_deploy_recoreds OWNER TO root;
+
+--
+-- Name: dcca_deploy_recoreds_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_deploy_recoreds_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_deploy_recoreds_id_seq OWNER TO root;
+
+--
+-- Name: dcca_deploy_recoreds_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_deploy_recoreds_id_seq OWNED BY public.dcca_deploy_recoreds.id;
+
+
+--
+-- Name: dcca_device_attributes; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_device_attributes (
+    id integer NOT NULL,
+    name character varying(24) NOT NULL,
+    description character varying(256)
+);
+
+
+ALTER TABLE public.dcca_device_attributes OWNER TO root;
+
+--
+-- Name: dcca_device_attributes_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_device_attributes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_device_attributes_id_seq OWNER TO root;
+
+--
+-- Name: dcca_device_attributes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_device_attributes_id_seq OWNED BY public.dcca_device_attributes.id;
+
+
+--
+-- Name: dcca_device_groups; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_device_groups (
+    id uuid DEFAULT public.uuid_generate_v1mc() NOT NULL,
+    name character varying(128) NOT NULL,
+    "desc" character varying(32) NOT NULL,
+    owner_id integer,
+    created_at timestamp without time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at timestamp without time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    is_public boolean DEFAULT false NOT NULL,
+    model boolean DEFAULT false,
+    customer_id uuid
+);
+
+
+ALTER TABLE public.dcca_device_groups OWNER TO root;
+
+--
+-- Name: dcca_device_ip; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_device_ip (
+    id integer NOT NULL,
+    ip character varying(256),
+    country character varying(16),
+    continent character varying(8),
+    latitude double precision,
+    longitude double precision,
+    device_id integer,
+    disabled boolean DEFAULT false
+);
+
+
+ALTER TABLE public.dcca_device_ip OWNER TO root;
+
+--
+-- Name: dcca_device_ip_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_device_ip_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_device_ip_id_seq OWNER TO root;
+
+--
+-- Name: dcca_device_ip_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_device_ip_id_seq OWNED BY public.dcca_device_ip.id;
+
+
+--
+-- Name: dcca_device_nics; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_device_nics (
+    id integer NOT NULL,
+    ip character varying(16),
+    device_id integer NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.dcca_device_nics OWNER TO root;
+
+--
+-- Name: dcca_device_nics_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_device_nics_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_device_nics_id_seq OWNER TO root;
+
+--
+-- Name: dcca_device_nics_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_device_nics_id_seq OWNED BY public.dcca_device_nics.id;
+
+
+--
+-- Name: dcca_device_position; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_device_position (
+    id integer NOT NULL,
+    latitude double precision,
+    longitude double precision,
+    location_id integer,
+    continent_id integer,
+    ip_address inet
+);
+
+
+ALTER TABLE public.dcca_device_position OWNER TO root;
+
+--
+-- Name: dcca_docker_deployment; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_docker_deployment (
+    id uuid DEFAULT public.uuid_generate_v1mc() NOT NULL,
+    status integer DEFAULT 0
+);
+
+
+ALTER TABLE public.dcca_docker_deployment OWNER TO root;
+
+--
+-- Name: dcca_hardwares; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_hardwares (
+    hwid integer NOT NULL,
+    name character varying(20) DEFAULT NULL::character varying,
+    url character varying(1024)
+);
+
+
+ALTER TABLE public.dcca_hardwares OWNER TO root;
+
+--
+-- Name: dcca_hardwares_hwid_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_hardwares_hwid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_hardwares_hwid_seq OWNER TO root;
+
+--
+-- Name: dcca_hardwares_hwid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_hardwares_hwid_seq OWNED BY public.dcca_hardwares.hwid;
+
+
+--
+-- Name: dcca_locations; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_locations (
+    id integer NOT NULL,
+    name character varying(64) NOT NULL
+);
+
+
+ALTER TABLE public.dcca_locations OWNER TO root;
+
+--
+-- Name: dcca_locations_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_locations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_locations_id_seq OWNER TO root;
+
+--
+-- Name: dcca_locations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_locations_id_seq OWNED BY public.dcca_locations.id;
+
+
+--
+-- Name: dcca_ml_docker_deployment; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_ml_docker_deployment (
+    id integer NOT NULL,
+    status integer DEFAULT 0
+);
+
+
+ALTER TABLE public.dcca_ml_docker_deployment OWNER TO root;
+
+--
+-- Name: dcca_ml_docker_deployment_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_ml_docker_deployment_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_ml_docker_deployment_id_seq OWNER TO root;
+
+--
+-- Name: dcca_ml_docker_deployment_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_ml_docker_deployment_id_seq OWNED BY public.dcca_ml_docker_deployment.id;
+
+
+--
+-- Name: dcca_ml_docker_tasks; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_ml_docker_tasks (
+    id integer NOT NULL,
+    code text,
+    status integer DEFAULT 0
+);
+
+
+ALTER TABLE public.dcca_ml_docker_tasks OWNER TO root;
+
+--
+-- Name: dcca_ml_docker_tasks_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_ml_docker_tasks_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_ml_docker_tasks_id_seq OWNER TO root;
+
+--
+-- Name: dcca_ml_docker_tasks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_ml_docker_tasks_id_seq OWNED BY public.dcca_ml_docker_tasks.id;
+
+
+--
+-- Name: dcca_models; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_models (
+    id integer NOT NULL,
+    model character varying(255) NOT NULL,
+    type character varying(255) NOT NULL,
+    platform character varying(255) NOT NULL,
+    vendor character varying(255) NOT NULL,
+    comment character varying(512) DEFAULT NULL::character varying,
+    is_public boolean DEFAULT false NOT NULL,
+    owner_id integer,
+    default_solution_id integer
+);
+
+
+ALTER TABLE public.dcca_models OWNER TO root;
+
+--
+-- Name: dcca_notify_messages; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_notify_messages (
+    id integer NOT NULL,
+    owner_id integer NOT NULL,
+    contents character varying(64) NOT NULL,
+    created_at timestamp without time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    is_active boolean DEFAULT true NOT NULL
+);
+
+
+ALTER TABLE public.dcca_notify_messages OWNER TO root;
+
+--
+-- Name: dcca_notify_messages_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_notify_messages_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_notify_messages_id_seq OWNER TO root;
+
+--
+-- Name: dcca_notify_messages_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_notify_messages_id_seq OWNED BY public.dcca_notify_messages.id;
+
+
+--
+-- Name: dcca_ota_status; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_ota_status (
+    id integer NOT NULL,
+    name character varying(64) NOT NULL
+);
+
+
+ALTER TABLE public.dcca_ota_status OWNER TO root;
+
+--
+-- Name: dcca_ota_status_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_ota_status_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_ota_status_id_seq OWNER TO root;
+
+--
+-- Name: dcca_ota_status_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_ota_status_id_seq OWNED BY public.dcca_ota_status.id;
+
+
+--
+-- Name: dcca_permissions; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_permissions (
+    id integer NOT NULL,
+    name character varying(64) NOT NULL,
+    resource_type character varying(32) NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    resource_id integer,
+    is_only_admin_allowed boolean DEFAULT false NOT NULL
+);
+
+
+ALTER TABLE public.dcca_permissions OWNER TO root;
+
+--
+-- Name: dcca_permissions_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_permissions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_permissions_id_seq OWNER TO root;
+
+--
+-- Name: dcca_permissions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_permissions_id_seq OWNED BY public.dcca_permissions.id;
+
+
+--
+-- Name: dcca_progress; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_progress (
+    id integer NOT NULL,
+    device_id integer NOT NULL,
+    label character varying(64) NOT NULL,
+    progress smallint NOT NULL,
+    message character varying(256),
+    terminated boolean DEFAULT false NOT NULL
+);
+
+
+ALTER TABLE public.dcca_progress OWNER TO root;
+
+--
+-- Name: dcca_progress_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_progress_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_progress_id_seq OWNER TO root;
+
+--
+-- Name: dcca_progress_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_progress_id_seq OWNED BY public.dcca_progress.id;
+
+
+--
+-- Name: dcca_resources; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_resources (
+    id integer NOT NULL,
+    name character varying(32) NOT NULL,
+    action character varying(16) NOT NULL,
+    url character varying(128) NOT NULL,
+    description character varying(128)
+);
+
+
+ALTER TABLE public.dcca_resources OWNER TO root;
+
+--
+-- Name: dcca_resources_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_resources_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_resources_id_seq OWNER TO root;
+
+--
+-- Name: dcca_resources_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_resources_id_seq OWNED BY public.dcca_resources.id;
+
+
+--
+-- Name: dcca_roles; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_roles (
+    name character varying(64) NOT NULL,
+    description text,
+    id integer NOT NULL,
+    created_at timestamp without time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at timestamp without time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+
+ALTER TABLE public.dcca_roles OWNER TO root;
+
+--
+-- Name: dcca_roles_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_roles_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_roles_id_seq OWNER TO root;
+
+--
+-- Name: dcca_roles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_roles_id_seq OWNED BY public.dcca_roles.id;
+
+
+--
+-- Name: dcca_services; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_services (
+    id integer NOT NULL,
+    uid character varying(32) NOT NULL,
+    name character varying(32),
+    server_certificate_format public.server_certificate_format,
+    server_certificate_key character varying(512),
+    connection_url character varying(512),
+    config character varying(1024),
+    signing_certificate_format public.signing_certificate_format,
+    signing_certificate_key character varying(512),
+    protocal character varying(16) NOT NULL,
+    cipher_suite character varying(64) NOT NULL,
+    user_id integer NOT NULL
+);
+
+
+ALTER TABLE public.dcca_services OWNER TO root;
+
+--
+-- Name: dcca_services_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_services_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_services_id_seq OWNER TO root;
+
+--
+-- Name: dcca_services_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_services_id_seq OWNED BY public.dcca_services.id;
+
+
+--
+-- Name: dcca_softapps; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_softapps (
+    id integer NOT NULL,
+    name character varying(32),
+    version character varying(20) NOT NULL,
+    mirror_id integer NOT NULL,
+    image_name character varying(64),
+    application_id integer,
+    commands character varying(512),
+    args character varying(512),
+    hostnetwork boolean DEFAULT false,
+    ports json,
+    volumes json,
+    volume_mounts json,
+    cap_add boolean DEFAULT false NOT NULL,
+    morepara json
+);
+
+
+ALTER TABLE public.dcca_softapps OWNER TO root;
+
+--
+-- Name: TABLE dcca_softapps; Type: COMMENT; Schema: public; Owner: root
+--
+
+COMMENT ON TABLE public.dcca_softapps IS 'One application different releases';
+
+
+--
+-- Name: dcca_softapps_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_softapps_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_softapps_id_seq OWNER TO root;
+
+--
+-- Name: dcca_softapps_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_softapps_id_seq OWNED BY public.dcca_softapps.id;
+
+
+--
+-- Name: dcca_softwares; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_softwares (
+    swid integer NOT NULL,
+    version_id integer NOT NULL,
+    date date DEFAULT ('now'::text)::date,
+    url character varying(1024) NOT NULL,
+    name character varying(30)
+);
+
+
+ALTER TABLE public.dcca_softwares OWNER TO root;
+
+--
+-- Name: dcca_solution_audit; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_solution_audit (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    approved boolean DEFAULT false NOT NULL,
+    comments text,
+    solution_id integer NOT NULL,
+    status boolean DEFAULT false NOT NULL,
+    to_public boolean DEFAULT false NOT NULL
+);
+
+
+ALTER TABLE public.dcca_solution_audit OWNER TO root;
+
+--
+-- Name: dcca_solution_audit_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_solution_audit_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_solution_audit_id_seq OWNER TO root;
+
+--
+-- Name: dcca_solution_audit_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_solution_audit_id_seq OWNED BY public.dcca_solution_audit.id;
+
+
+--
+-- Name: dcca_solution_sign; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_solution_sign (
+    id integer NOT NULL,
+    solution_id integer NOT NULL,
+    key_id uuid NOT NULL,
+    description text,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    status smallint DEFAULT 0 NOT NULL
+);
+
+
+ALTER TABLE public.dcca_solution_sign OWNER TO root;
+
+--
+-- Name: dcca_solution_sign_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_solution_sign_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_solution_sign_id_seq OWNER TO root;
+
+--
+-- Name: dcca_solution_sign_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_solution_sign_id_seq OWNED BY public.dcca_solution_sign.id;
+
+
+--
+-- Name: dcca_sw_versions; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_sw_versions (
+    id integer NOT NULL,
+    major character varying(20) NOT NULL,
+    minor character varying(20) NOT NULL
+);
+
+
+ALTER TABLE public.dcca_sw_versions OWNER TO root;
+
+--
+-- Name: dcca_tag_types; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_tag_types (
+    id integer NOT NULL,
+    name character varying(32) NOT NULL,
+    "desc" character varying(128)
+);
+
+
+ALTER TABLE public.dcca_tag_types OWNER TO root;
+
+--
+-- Name: dcca_tag_types_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_tag_types_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_tag_types_id_seq OWNER TO root;
+
+--
+-- Name: dcca_tag_types_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_tag_types_id_seq OWNED BY public.dcca_tag_types.id;
+
+
+--
+-- Name: dcca_tags; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_tags (
+    id integer NOT NULL,
+    name character varying(16) NOT NULL,
+    description character varying(64)
+);
+
+
+ALTER TABLE public.dcca_tags OWNER TO root;
+
+--
+-- Name: dcca_tags_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_tags_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_tags_id_seq OWNER TO root;
+
+--
+-- Name: dcca_tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_tags_id_seq OWNED BY public.dcca_tags.id;
+
+
+--
+-- Name: dcca_task_status; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_task_status (
+    id integer NOT NULL,
+    name character varying(10) NOT NULL
+);
+
+
+ALTER TABLE public.dcca_task_status OWNER TO root;
+
+--
+-- Name: dcca_task_status_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_task_status_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_task_status_id_seq OWNER TO root;
+
+--
+-- Name: dcca_task_status_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_task_status_id_seq OWNED BY public.dcca_task_status.id;
+
+
+--
+-- Name: dcca_task_template; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_task_template (
+    id uuid DEFAULT public.uuid_generate_v1mc() NOT NULL,
+    name character varying(64) NOT NULL,
+    "desc" text,
+    owner_id integer,
+    created_at timestamp without time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at timestamp without time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    body json
+);
+
+
+ALTER TABLE public.dcca_task_template OWNER TO root;
+
+--
+-- Name: dcca_task_types; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_task_types (
+    id integer NOT NULL,
+    name character varying(20) NOT NULL
+);
+
+
+ALTER TABLE public.dcca_task_types OWNER TO root;
+
+--
+-- Name: dcca_task_types_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_task_types_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_task_types_id_seq OWNER TO root;
+
+--
+-- Name: dcca_task_types_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_task_types_id_seq OWNED BY public.dcca_task_types.id;
+
+
+--
+-- Name: dcca_tasks; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_tasks (
+    id integer NOT NULL,
+    device_id integer NOT NULL,
+    start_time timestamp without time zone DEFAULT now() NOT NULL,
+    end_time timestamp without time zone,
+    type_id integer NOT NULL,
+    status_id integer NOT NULL,
+    solution_id integer NOT NULL,
+    ota_status_id integer
+);
+
+
+ALTER TABLE public.dcca_tasks OWNER TO root;
+
+--
+-- Name: dcca_tasks_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_tasks_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_tasks_id_seq OWNER TO root;
+
+--
+-- Name: dcca_tasks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_tasks_id_seq OWNED BY public.dcca_tasks.id;
+
+
+--
+-- Name: dcca_user_limit_type; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_user_limit_type (
+    id integer NOT NULL,
+    name character varying(32) NOT NULL,
+    "desc" character varying(64),
+    default_max_limit integer NOT NULL,
+    default_max_sec integer,
+    is_per_time boolean DEFAULT false NOT NULL
+);
+
+
+ALTER TABLE public.dcca_user_limit_type OWNER TO root;
+
+--
+-- Name: dcca_user_limit_type_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_user_limit_type_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_user_limit_type_id_seq OWNER TO root;
+
+--
+-- Name: dcca_user_limit_type_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_user_limit_type_id_seq OWNED BY public.dcca_user_limit_type.id;
+
+
+--
+-- Name: dcca_user_limits; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_user_limits (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    limit_type_id integer NOT NULL,
+    max_limit integer NOT NULL,
+    max_sec integer
+);
+
+
+ALTER TABLE public.dcca_user_limits OWNER TO root;
+
+--
+-- Name: dcca_user_limits_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_user_limits_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_user_limits_id_seq OWNER TO root;
+
+--
+-- Name: dcca_user_limits_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_user_limits_id_seq OWNED BY public.dcca_user_limits.id;
+
+
+--
+-- Name: dcca_users; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_users (
+    id integer NOT NULL,
+    username character varying(255) NOT NULL,
+    email character varying(255) NOT NULL,
+    display_name character varying(255),
+    admin boolean DEFAULT false,
+    password_hash character varying(128) NOT NULL,
+    password_salt character varying(128) NOT NULL,
+    mail_enabled boolean DEFAULT false,
+    update_at timestamp without time zone DEFAULT now() NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    timezone character varying(255),
+    is_marketing boolean DEFAULT false,
+    account_type_id integer DEFAULT 4,
+    image character varying(256),
+    token_expire_hours integer DEFAULT 24 NOT NULL,
+    oem_id bit varying(32),
+    status boolean DEFAULT true
+);
+
+
+ALTER TABLE public.dcca_users OWNER TO root;
+
+--
+-- Name: dcca_users_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_users_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_users_id_seq OWNER TO root;
+
+--
+-- Name: dcca_users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_users_id_seq OWNED BY public.dcca_users.id;
+
+
+--
+-- Name: dcca_vendors; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.dcca_vendors (
+    id integer NOT NULL,
+    name character varying(32) NOT NULL,
+    is_public boolean DEFAULT true NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.dcca_vendors OWNER TO root;
+
+--
+-- Name: dcca_vendor_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.dcca_vendor_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.dcca_vendor_id_seq OWNER TO root;
+
+--
+-- Name: dcca_vendor_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.dcca_vendor_id_seq OWNED BY public.dcca_vendors.id;
+
+
+--
+-- Name: edgescale_app; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.edgescale_app (
+    appname character varying(255) NOT NULL,
+    deviceid character varying(255) NOT NULL,
+    userid character varying(255) DEFAULT ''::character varying NOT NULL,
+    cfgfactory character varying(1024) DEFAULT ''::character varying,
+    appstatus character varying(255) DEFAULT ''::character varying,
+    appmessage character varying(255) DEFAULT ''::character varying,
+    appcreatetime character varying(255) DEFAULT ''::character varying,
+    lastupdate character varying(255) DEFAULT ''::character varying,
+    task character varying(255) DEFAULT ''::character varying,
+    reason character varying(255) DEFAULT ''::character varying
+);
+
+
+ALTER TABLE public.edgescale_app OWNER TO root;
+
+--
+-- Name: edgescale_tasks; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.edgescale_tasks (
+    id integer NOT NULL,
+    type integer NOT NULL,
+    payload json NOT NULL,
+    status integer,
+    "timestamp" timestamp without time zone DEFAULT now(),
+    logical_delete boolean DEFAULT false NOT NULL
+);
+
+
+ALTER TABLE public.edgescale_tasks OWNER TO root;
+
+--
+-- Name: edgescale_tasks_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.edgescale_tasks_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.edgescale_tasks_id_seq OWNER TO root;
+
+--
+-- Name: edgescale_tasks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.edgescale_tasks_id_seq OWNED BY public.edgescale_tasks.id;
+
+
+--
+-- Name: es_task_da_inst; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.es_task_da_inst (
+    id uuid DEFAULT public.uuid_generate_v1mc() NOT NULL,
+    task_id integer NOT NULL,
+    device_id integer NOT NULL,
+    softapp_id integer NOT NULL,
+    status smallint DEFAULT 0 NOT NULL,
+    status_payload json NOT NULL,
+    created_at timestamp without time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at timestamp without time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    payload json NOT NULL
+);
+
+
+ALTER TABLE public.es_task_da_inst OWNER TO root;
+
+--
+-- Name: es_task_device_inst; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.es_task_device_inst (
+    id uuid DEFAULT public.uuid_generate_v1mc() NOT NULL,
+    task_id integer NOT NULL,
+    device_id integer NOT NULL,
+    created_at timestamp without time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    payload json DEFAULT '{}'::json,
+    status integer DEFAULT 0,
+    result text
+);
+
+
+ALTER TABLE public.es_task_device_inst OWNER TO root;
+
+--
+-- Name: es_task_ota_inst; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.es_task_ota_inst (
+    id uuid DEFAULT public.uuid_generate_v1mc() NOT NULL,
+    task_id integer NOT NULL,
+    device_id integer NOT NULL,
+    solution_id integer NOT NULL,
+    status smallint NOT NULL,
+    status_payload json NOT NULL,
+    created_at timestamp without time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at timestamp without time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+
+ALTER TABLE public.es_task_ota_inst OWNER TO root;
+
+--
+-- Name: es_tasks; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.es_tasks (
+    id integer NOT NULL,
+    type smallint DEFAULT 0 NOT NULL,
+    status smallint DEFAULT 0 NOT NULL,
+    payloads json NOT NULL,
+    created_at timestamp without time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    owner_id integer NOT NULL,
+    logical_delete boolean DEFAULT false NOT NULL,
+    started_at timestamp without time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+    ended_at timestamp without time zone
+);
+
+
+ALTER TABLE public.es_tasks OWNER TO root;
+
+--
+-- Name: es_tasks_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.es_tasks_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.es_tasks_id_seq OWNER TO root;
+
+--
+-- Name: es_tasks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.es_tasks_id_seq OWNED BY public.es_tasks.id;
+
+
+--
+-- Name: hosts; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.hosts (
+    id integer NOT NULL,
+    name character varying(64) NOT NULL,
+    last_report timestamp without time zone,
+    updated_at timestamp without time zone DEFAULT timezone('utc'::text, now()),
+    created_at timestamp without time zone DEFAULT timezone('utc'::text, now()),
+    owner_id integer NOT NULL,
+    certname character varying(255),
+    dcca_model_id integer,
+    display_name character varying(32),
+    customer_id uuid,
+    solution_id integer,
+    online boolean DEFAULT false NOT NULL,
+    lifecycle smallint,
+    oem_uid integer
+);
+
+
+ALTER TABLE public.hosts OWNER TO root;
+
+--
+-- Name: hosts_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.hosts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.hosts_id_seq OWNER TO root;
+
+--
+-- Name: hosts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.hosts_id_seq OWNED BY public.hosts.id;
+
+
+--
+-- Name: scale_subdev_attr; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.scale_subdev_attr (
+    id integer NOT NULL,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    subdevid integer,
+    name character varying(64),
+    status jsonb,
+    shadow jsonb
+);
+
+
+ALTER TABLE public.scale_subdev_attr OWNER TO root;
+
+--
+-- Name: scale_subdev_attr_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.scale_subdev_attr_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.scale_subdev_attr_id_seq OWNER TO root;
+
+--
+-- Name: scale_subdev_attr_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.scale_subdev_attr_id_seq OWNED BY public.scale_subdev_attr.id;
+
+
+--
+-- Name: scale_subdev_reg; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.scale_subdev_reg (
+    id integer NOT NULL,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    name character varying(64) NOT NULL,
+    model_id character varying(64) NOT NULL,
+    devid character varying(64) NOT NULL,
+    gwid character varying(64) NOT NULL,
+    hostid integer NOT NULL,
+    topic character varying(255),
+    status integer DEFAULT 0,
+    disname character varying(64),
+    description text,
+    get jsonb,
+    set jsonb,
+    ota jsonb,
+    owner_id integer DEFAULT 0
+);
+
+
+ALTER TABLE public.scale_subdev_reg OWNER TO root;
+
+--
+-- Name: scale_subdev_reg_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.scale_subdev_reg_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.scale_subdev_reg_id_seq OWNER TO root;
+
+--
+-- Name: scale_subdev_reg_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.scale_subdev_reg_id_seq OWNED BY public.scale_subdev_reg.id;
+
+
+--
+-- Name: softwares_swid_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.softwares_swid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.softwares_swid_seq OWNER TO root;
+
+--
+-- Name: softwares_swid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.softwares_swid_seq OWNED BY public.dcca_softwares.swid;
+
+
+--
+-- Name: sw_models_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.sw_models_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.sw_models_id_seq OWNER TO root;
+
+--
+-- Name: sw_models_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.sw_models_id_seq OWNED BY public.dcca_models.id;
+
+
+--
+-- Name: sw_versions_id_seq; Type: SEQUENCE; Schema: public; Owner: root
+--
+
+CREATE SEQUENCE public.sw_versions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.sw_versions_id_seq OWNER TO root;
+
+--
+-- Name: sw_versions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
+--
+
+ALTER SEQUENCE public.sw_versions_id_seq OWNED BY public.dcca_sw_versions.id;
+
+
+--
+-- Name: dcca_access_records id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_access_records ALTER COLUMN id SET DEFAULT nextval('public.dcca_access_records_id_seq'::regclass);
+
+
+--
+-- Name: dcca_account_types id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_account_types ALTER COLUMN id SET DEFAULT nextval('public.dcca_account_type_id_seq'::regclass);
+
+
+--
+-- Name: dcca_accounts id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_accounts ALTER COLUMN id SET DEFAULT nextval('public.dcca_accounts_id_seq'::regclass);
+
+
+--
+-- Name: dcca_api_access_records id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_api_access_records ALTER COLUMN id SET DEFAULT nextval('public.dcca_api_access_records_id_seq'::regclass);
+
+
+--
+-- Name: dcca_app_mirror id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_app_mirror ALTER COLUMN id SET DEFAULT nextval('public.dcca_app_mirror_id_seq'::regclass);
+
+
+--
+-- Name: dcca_applications id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_applications ALTER COLUMN id SET DEFAULT nextval('public.dcca_applications_id_seq'::regclass);
+
+
+--
+-- Name: dcca_apply_apps id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_apply_apps ALTER COLUMN id SET DEFAULT nextval('public.dcca_apply_apps_id_seq'::regclass);
+
+
+--
+-- Name: dcca_ass_host_model id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_host_model ALTER COLUMN id SET DEFAULT nextval('public.dcca_ass_host_model_id_seq'::regclass);
+
+
+--
+-- Name: dcca_ass_model_software id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_model_software ALTER COLUMN id SET DEFAULT nextval('public.dcca_ass_model_software_id_seq'::regclass);
+
+
+--
+-- Name: dcca_ass_solution_images id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_solution_images ALTER COLUMN id SET DEFAULT nextval('public.dcca_ass_solution_images_id_seq'::regclass);
+
+
+--
+-- Name: dcca_ass_user_role id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_user_role ALTER COLUMN id SET DEFAULT nextval('public.dcca_ass_user_role_id_seq'::regclass);
+
+
+--
+-- Name: dcca_audit id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_audit ALTER COLUMN id SET DEFAULT nextval('public.dcca_audit_id_seq'::regclass);
+
+
+--
+-- Name: dcca_builder id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_builder ALTER COLUMN id SET DEFAULT nextval('public.dcca_builder_id_seq'::regclass);
+
+
+--
+-- Name: dcca_certificates id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_certificates ALTER COLUMN id SET DEFAULT nextval('public.dcca_certificates_id_seq'::regclass);
+
+
+--
+-- Name: dcca_ci_tasks id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ci_tasks ALTER COLUMN id SET DEFAULT nextval('public.dcca_ci_tasks_id_seq'::regclass);
+
+
+--
+-- Name: dcca_continents id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_continents ALTER COLUMN id SET DEFAULT nextval('public.dcca_continents_id_seq'::regclass);
+
+
+--
+-- Name: dcca_deploy_recoreds id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_deploy_recoreds ALTER COLUMN id SET DEFAULT nextval('public.dcca_deploy_recoreds_id_seq'::regclass);
+
+
+--
+-- Name: dcca_device_attributes id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_device_attributes ALTER COLUMN id SET DEFAULT nextval('public.dcca_device_attributes_id_seq'::regclass);
+
+
+--
+-- Name: dcca_device_ip id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_device_ip ALTER COLUMN id SET DEFAULT nextval('public.dcca_device_ip_id_seq'::regclass);
+
+
+--
+-- Name: dcca_device_nics id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_device_nics ALTER COLUMN id SET DEFAULT nextval('public.dcca_device_nics_id_seq'::regclass);
+
+
+--
+-- Name: dcca_hardwares hwid; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_hardwares ALTER COLUMN hwid SET DEFAULT nextval('public.dcca_hardwares_hwid_seq'::regclass);
+
+
+--
+-- Name: dcca_locations id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_locations ALTER COLUMN id SET DEFAULT nextval('public.dcca_locations_id_seq'::regclass);
+
+
+--
+-- Name: dcca_ml_docker_deployment id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ml_docker_deployment ALTER COLUMN id SET DEFAULT nextval('public.dcca_ml_docker_deployment_id_seq'::regclass);
+
+
+--
+-- Name: dcca_ml_docker_tasks id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ml_docker_tasks ALTER COLUMN id SET DEFAULT nextval('public.dcca_ml_docker_tasks_id_seq'::regclass);
+
+
+--
+-- Name: dcca_models id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_models ALTER COLUMN id SET DEFAULT nextval('public.sw_models_id_seq'::regclass);
+
+
+--
+-- Name: dcca_notify_messages id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_notify_messages ALTER COLUMN id SET DEFAULT nextval('public.dcca_notify_messages_id_seq'::regclass);
+
+
+--
+-- Name: dcca_ota_status id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ota_status ALTER COLUMN id SET DEFAULT nextval('public.dcca_ota_status_id_seq'::regclass);
+
+
+--
+-- Name: dcca_permissions id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_permissions ALTER COLUMN id SET DEFAULT nextval('public.dcca_permissions_id_seq'::regclass);
+
+
+--
+-- Name: dcca_progress id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_progress ALTER COLUMN id SET DEFAULT nextval('public.dcca_progress_id_seq'::regclass);
+
+
+--
+-- Name: dcca_resources id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_resources ALTER COLUMN id SET DEFAULT nextval('public.dcca_resources_id_seq'::regclass);
+
+
+--
+-- Name: dcca_roles id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_roles ALTER COLUMN id SET DEFAULT nextval('public.dcca_roles_id_seq'::regclass);
+
+
+--
+-- Name: dcca_services id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_services ALTER COLUMN id SET DEFAULT nextval('public.dcca_services_id_seq'::regclass);
+
+
+--
+-- Name: dcca_softapps id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_softapps ALTER COLUMN id SET DEFAULT nextval('public.dcca_softapps_id_seq'::regclass);
+
+
+--
+-- Name: dcca_softwares swid; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_softwares ALTER COLUMN swid SET DEFAULT nextval('public.softwares_swid_seq'::regclass);
+
+
+--
+-- Name: dcca_solution_audit id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_solution_audit ALTER COLUMN id SET DEFAULT nextval('public.dcca_solution_audit_id_seq'::regclass);
+
+
+--
+-- Name: dcca_solution_sign id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_solution_sign ALTER COLUMN id SET DEFAULT nextval('public.dcca_solution_sign_id_seq'::regclass);
+
+
+--
+-- Name: dcca_sw_versions id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_sw_versions ALTER COLUMN id SET DEFAULT nextval('public.sw_versions_id_seq'::regclass);
+
+
+--
+-- Name: dcca_tag_types id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_tag_types ALTER COLUMN id SET DEFAULT nextval('public.dcca_tag_types_id_seq'::regclass);
+
+
+--
+-- Name: dcca_tags id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_tags ALTER COLUMN id SET DEFAULT nextval('public.dcca_tags_id_seq'::regclass);
+
+
+--
+-- Name: dcca_task_status id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_task_status ALTER COLUMN id SET DEFAULT nextval('public.dcca_task_status_id_seq'::regclass);
+
+
+--
+-- Name: dcca_task_types id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_task_types ALTER COLUMN id SET DEFAULT nextval('public.dcca_task_types_id_seq'::regclass);
+
+
+--
+-- Name: dcca_tasks id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_tasks ALTER COLUMN id SET DEFAULT nextval('public.dcca_tasks_id_seq'::regclass);
+
+
+--
+-- Name: dcca_user_limit_type id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_user_limit_type ALTER COLUMN id SET DEFAULT nextval('public.dcca_user_limit_type_id_seq'::regclass);
+
+
+--
+-- Name: dcca_user_limits id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_user_limits ALTER COLUMN id SET DEFAULT nextval('public.dcca_user_limits_id_seq'::regclass);
+
+
+--
+-- Name: dcca_users id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_users ALTER COLUMN id SET DEFAULT nextval('public.dcca_users_id_seq'::regclass);
+
+
+--
+-- Name: dcca_vendors id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_vendors ALTER COLUMN id SET DEFAULT nextval('public.dcca_vendor_id_seq'::regclass);
+
+
+--
+-- Name: edgescale_tasks id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.edgescale_tasks ALTER COLUMN id SET DEFAULT nextval('public.edgescale_tasks_id_seq'::regclass);
+
+
+--
+-- Name: es_tasks id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.es_tasks ALTER COLUMN id SET DEFAULT nextval('public.es_tasks_id_seq'::regclass);
+
+
+--
+-- Name: hosts id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.hosts ALTER COLUMN id SET DEFAULT nextval('public.hosts_id_seq'::regclass);
+
+
+--
+-- Name: scale_subdev_attr id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.scale_subdev_attr ALTER COLUMN id SET DEFAULT nextval('public.scale_subdev_attr_id_seq'::regclass);
+
+
+--
+-- Name: scale_subdev_reg id; Type: DEFAULT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.scale_subdev_reg ALTER COLUMN id SET DEFAULT nextval('public.scale_subdev_reg_id_seq'::regclass);
+
+
+--
+-- Data for Name: config; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.config (text) FROM stdin;
+{"settings": {"REDIS_PORT": "6379", "DEVICE_STATUS_TABLE": "edgescale_device_status", "REDIS_HOST": "redis-external.openfaas-util", "REDIS_PWD": "edgescale", "REST_API_ID": "j2le", "REST_API_SHORT_ID": "j2le", "ADMIN_EMAIL_PWD": "", "SMTP_HOST": "", "ADMIN_EMAIL": "", "SMTP_PORT": "", "MQTT_MGMT_USER": "admin", "MQTT_MGMT_PASS": "public", "MQTT_URI": "int.msg.edgescale.org:8443", "MQTT_LOCAL_HOST": "http://emqtt-external.openfaas-util:8081", "DEBUG": true, "HOST_SITE": "https://console.edgescale.org/", "LOG_URL": "https://s3.edgescale.org:10086", "API_URI": "https://api.edgescale.org/v1", "DOCKER_CONTNET_TRUST": "https://trust.edgescale.org", "S3_HOST": "http://minio-external.openfaas-util:9000", "MQTT_HOST": "emqtt-external.openfaas-util", "K8S_PORT": "7443", "K8S_HOST": ""}}
+\.
+
+
+--
+-- Data for Name: dcca_access_records; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_access_records (id, uid, username, is_admin, auth_at, method_arn) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_account_types; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_account_types (id, name, description, is_external) FROM stdin;
+2	OEM	有自己的品牌	t
+3	ODM	代工厂，没有自己的品牌	t
+1	Marketing	Marketing	f
+4	USER	common user	t
+\.
+
+
+--
+-- Data for Name: dcca_accounts; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_accounts (id, company_name, telephone, email, job_title, account_type_id, first_name, last_name, created_at, status, applied_at) FROM stdin;
+1	leetv.com	15812343455	accounttest@saofh.com	beijing	4	eric	byso	2019-09-11 22:34:58.106928	0	2019-09-11 22:34:58.106928
+\.
+
+
+--
+-- Data for Name: dcca_ai_engines; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_ai_engines (id, name, category, owner_id, is_public, created_at, updated_at, description, url) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_ai_models; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_ai_models (id, name, owner_id, is_public, url, created_at, updated_at, description, storage) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_api_access_records; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_api_access_records (id, user_id, access_date, record) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_app_mirror; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_app_mirror (id, name, is_public, description, user_id, created_at) FROM stdin;
+5	hub.docker.com	t	\N	3	2019-07-05 08:35:17.799232
+\.
+
+
+--
+-- Data for Name: dcca_applications; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_applications (id, name, display_name, description, likes, stars, created_at, vendor_id, logical_delete_flag, image, is_public, owner_id, documents, in_store) FROM stdin;
+1	ls1012ardbtesting		ewrraded	0	0	2019-09-11 22:34:44.169579	\N	t	default.png	f	4	\N	t
+2	sdafd		sadfasf	0	0	2019-09-12 02:21:01.368724	\N	f		f	4	\N	f
+\.
+
+
+--
+-- Data for Name: dcca_apply_apps; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_apply_apps (id, user_id, created_at, approved, comments, app_id, op_times, status) FROM stdin;
+1	4	2019-09-11 22:34:45.671241	t	\N	1	0	1
+\.
+
+
+--
+-- Data for Name: dcca_ass_ai_model_engine; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_ass_ai_model_engine (model_id, engine_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_ass_app_tag; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_ass_app_tag (application_id, tag_id) FROM stdin;
+1	1
+\.
+
+
+--
+-- Data for Name: dcca_ass_device_group; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_ass_device_group (group_id, device_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_ass_device_tag; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_ass_device_tag (device_id, tag_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_ass_device_task; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_ass_device_task (device_id, task_id, status_payload) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_ass_host_model; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_ass_host_model (id, host_id, model_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_ass_model_service; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_ass_model_service (model_id, service_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_ass_model_software; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_ass_model_software (model_id, software_id, id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_ass_role_perm; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_ass_role_perm (role_id, perm_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_ass_solution_images; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_ass_solution_images (id, solution, model_id, image, version, link, is_public, in_s3, public_key, is_signed, logical_delete_flag, owner_id, have_installer) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_ass_solution_tag; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_ass_solution_tag (solution_id, tag_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_ass_user_device; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_ass_user_device (user_id, device_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_ass_user_role; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_ass_user_role (id, user_id, role_id) FROM stdin;
+3	3	1
+4	4	1
+\.
+
+
+--
+-- Data for Name: dcca_ass_user_solution; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_ass_user_solution (user_id, solution_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_ass_user_task; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_ass_user_task (user_id, task_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_ass_user_vendor; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_ass_user_vendor (user_id, vendor_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_audit; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_audit (id, user_id, created_at, approved, comments, approve_type, approve_item, to_public, status) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_builder; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_builder (id, uid, name, category, config, created, updated, description) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_certificates; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_certificates (id, body, private_key, chain, user_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_ci_tasks; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_ci_tasks (id, code, status) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_common_services; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_common_services (id, type, name, url, port, user_id, access_token) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_continents; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_continents (id, name, short_name) FROM stdin;
+1	Asia	AS
+2	Africa	AF
+3	Europe	EU
+4	South America	SA
+5	North America	NA
+6	Oceania	OA
+7	Antarctica	AN
+\.
+
+
+--
+-- Data for Name: dcca_customers; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_customers (id, name, owner_id, is_active, created_at, updated_at, description) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_deploy_recoreds; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_deploy_recoreds (id, event, template, raw_k8s_result, parsed_k8s_result, resource, task_id, device_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_device_attributes; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_device_attributes (id, name, description) FROM stdin;
+1	location	\N
+2	platform	\N
+\.
+
+
+--
+-- Data for Name: dcca_device_groups; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_device_groups (id, name, "desc", owner_id, created_at, updated_at, is_public, model, customer_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_device_ip; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_device_ip (id, ip, country, continent, latitude, longitude, device_id, disabled) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_device_nics; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_device_nics (id, ip, device_id, updated_at, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_device_position; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_device_position (id, latitude, longitude, location_id, continent_id, ip_address) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_docker_deployment; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_docker_deployment (id, status) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_hardwares; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_hardwares (hwid, name, url) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_locations; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_locations (id, name) FROM stdin;
+13	Tianjin/China
+15	Austin/United States
+16	Beijing/China
+17	None/India
+18	Antwerp/Belgium
+19	Stuttgart/Germany
+20	Shanghai/China
+21	None/United States
+22	Plainfield/United States
+23	Metuchen/United States
+24	Maasmechelen/Belgium
+25	Tourteron/France
+26	Dongguan/China
+27	New Delhi/India
+28	Tokyo/Japan
+29	None/France
+30	None/Japan
+31	San Jose/United States
+32	Villebougis/France
+33	Chennai/India
+34	Barcelona/Spain
+35	Paris/France
+36	None/Germany
+37	Houston/United States
+38	Singapore/Singapore
+39	Plano/United States
+40	None/Taiwan
+41	Tempe/United States
+42	Bucharest/Romania
+43	None/Romania
+44	Roissy-en-Brie/France
+45	Artesia/United States
+46	Irvine/United States
+47	Buena Park/United States
+48	Sunnyvale/United States
+49	Redwood City/United States
+50	Fremont/United States
+51	Saitama/Japan
+52	Angervilliers/France
+53	Chongqing/China
+54	None/Turkey
+55	Tucson/United States
+56	Kofu/Japan
+57	Chandler/United States
+58	Carlisle/United Kingdom
+59	Nagoya/Japan
+60	Le Locle/Switzerland
+61	Hanoi/Vietnam
+62	Salt Lake City/United States
+63	Soisy-sous-Montmorency/France
+64	Cincinnati/United States
+65	Quarry Bay/Hong Kong
+66	Philadelphia/United States
+67	Ann Arbor/United States
+68	Yiwu/China
+69	College Park/United States
+70	Wiesbaden/Germany
+71	Naperville/United States
+72	Rufus/United States
+73	Frankfurt am Main/Germany
+74	Hebei/China
+75	Adamow/Poland
+76	None/United Kingdom
+77	Sacramento/United States
+78	Budapest/Hungary
+79	Plymouth/United States
+80	Etobicoke/Canada
+81	None/Croatia
+82	Bellville/South Africa
+83	Middletown/United States
+84	Raleigh/United States
+85	Oslo/Norway
+86	Okinawa/Japan
+87	Ottawa/Canada
+88	None/Switzerland
+89	None/Australia
+90	Dortmund/Germany
+91	Tahara/Japan
+92	Culbertson/United States
+93	Harbin/China
+94	Gurgaon/India
+95	Bedford/United Kingdom
+96	Pittsburgh/United States
+97	Dagenham/United Kingdom
+98	Victoria/Canada
+99	Sioux Falls/United States
+100	None/South Africa
+101	None/Italy
+102	Bois-Colombes/France
+103	Montgomery/United States
+104	Pasig/Philippines
+105	Udine/Italy
+106	Fort Huachuca/United States
+107	Oviedo/Spain
+108	None/Republic of Korea
+109	Glasgow/United Kingdom
+110	Deventer/Netherlands
+111	Shenyang/China
+112	Yeosu/Republic of Korea
+113	San Diego/United States
+114	Eichwalde/Germany
+115	Linköping/Sweden
+116	Jakarta/Indonesia
+117	Provo/United States
+118	Fleet/United Kingdom
+119	Dearborn/United States
+120	Northport/United States
+121	None/Poland
+122	Parramatta/Australia
+123	None/Belgium
+124	Ashburn/United States
+125	None/Russia
+126	Franklin/United States
+127	Woodbridge/United States
+128	Istanbul/Turkey
+129	Nanjing/China
+130	Newark/United States
+131	Maersta/Sweden
+132	Tübingen/Germany
+133	Utsunomiya/Japan
+134	Amagne/France
+135	Baardegem/Belgium
+136	Wuhan/China
+137	Jinan/China
+138	Guiyang/China
+139	Margival/France
+140	None/Spain
+141	Rennes/France
+142	Kamirenjaku/Japan
+143	Coimbatore/India
+144	Guangzhou/China
+145	Shenzhen/China
+146	Meslay-du-Maine/France
+147	Kunming/China
+148	None/China
+149	Los Banos/United States
+150	Los Angeles/United States
+151	Changsha/China
+152	Delhi/India
+153	Faridabad/India
+\.
+
+
+--
+-- Data for Name: dcca_ml_docker_deployment; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_ml_docker_deployment (id, status) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_ml_docker_tasks; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_ml_docker_tasks (id, code, status) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_models; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_models (id, model, type, platform, vendor, comment, is_public, owner_id, default_solution_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_notify_messages; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_notify_messages (id, owner_id, contents, created_at, is_active) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_ota_status; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_ota_status (id, name) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_permissions; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_permissions (id, name, resource_type, created_at, updated_at, resource_id, is_only_admin_allowed) FROM stdin;
+1	create_device	Device	2017-10-24 15:40:58.085455	2017-10-24 15:40:58.085455	4	f
+2	query_device	Device	2017-10-24 18:42:34.021328	2017-10-24 18:42:34.021328	5	f
+3	auth_test	Test	2017-10-25 20:03:16.703222	2017-10-25 20:03:16.703222	8	f
+4	view_device	Device	2017-11-02 18:30:31.707672	2017-11-02 18:30:31.707672	10	f
+5	test	Test	2017-11-03 18:01:40.936597	2017-11-03 18:01:40.936597	11	f
+6	create_solution	Solution	2017-11-09 15:56:35.91053	2017-11-09 15:56:35.91053	12	f
+11	query_devices_by_tag	DeviceTag	2017-11-13 17:22:32.936443	2017-11-13 17:22:32.936443	17	f
+12	query_progress	Device	2017-11-13 18:28:47.614896	2017-11-13 18:28:47.614896	18	f
+14	query_one_device	Device	2017-11-14 11:56:34.415681	2017-11-14 11:56:34.415681	20	f
+15	delete_device	Device	2017-11-14 16:58:25.490695	2017-11-14 16:58:25.490695	21	f
+17	query_device_blurred_by_tag	DeviceTag	2017-11-15 18:44:23.291096	2017-11-15 18:44:23.291096	23	f
+22	attribute_filter	DeviceAttribute	2017-11-30 11:08:29.916313	2017-11-30 11:08:29.916313	28	f
+23	attribute_name_filter	DeviceAttribute	2017-11-30 11:08:29.916313	2017-11-30 11:08:29.916313	29	f
+24	attribute_value_filter	DeviceAttribute	2017-11-30 11:08:29.916313	2017-11-30 11:08:29.916313	30	f
+26	batch_attach_tag	Tag	2017-12-01 18:21:10.944873	2017-12-01 18:21:10.944873	32	f
+27	query_position	Position	2017-12-05 13:45:07.504612	2017-12-05 13:45:07.504612	33	f
+28	add_private_mirror	Mirror	2017-12-05 17:17:11.024903	2017-12-05 17:17:11.024903	34	f
+29	add_public_mirror	Mirror	2017-12-05 17:17:11.024903	2017-12-05 17:17:11.024903	35	f
+30	delete_mirror	Mirror	2017-12-05 17:17:11.024903	2017-12-05 17:17:11.024903	36	f
+31	update_mirror	Mirror	2017-12-05 14:37:12.861765	2017-12-05 14:37:12.861765	37	f
+33	query_device_info	Device	2017-12-06 17:25:24.986427	2017-12-06 17:25:24.986427	39	f
+34	query_statistics	Statistics	2017-12-07 16:21:11.828621	2017-12-07 16:21:11.828621	40	f
+35	device_filter	DeviceFilter	2017-12-08 17:39:27.112135	2017-12-08 17:39:27.112135	41	f
+41	delete_solution_tag	Solution	2017-12-15 05:33:57.211459	2017-12-15 05:33:57.211459	47	f
+43	query_task_by_device_id	RealTask	2017-12-15 16:53:52.222623	2017-12-15 16:53:52.222623	48	f
+45	create_task	RealTask	2017-12-15 17:04:45.294367	2017-12-15 17:04:45.294367	49	f
+46	query_all_tasks	RealTask	2017-12-15 17:06:43.042618	2017-12-15 17:06:43.042618	50	f
+47	query_one_task_by_task_id	RealTask	2017-12-15 17:10:26.698786	2017-12-15 17:10:26.698786	51	f
+48	remove_task	RealTask	2017-12-18 14:41:49.796266	2017-12-18 14:41:49.796266	52	f
+49	get_certificate	Cerificate	2017-12-19 10:39:25.399129	2017-12-19 10:39:25.399129	53	f
+50	create_device_position	DevicePosition	2017-12-20 13:30:35.228579	2017-12-20 13:30:35.228579	54	f
+51	attach_tag_to_app	Tag	2017-12-27 13:58:30.475423	2017-12-27 13:58:30.475423	55	f
+52	remove_tag_from_app	Tag	2017-12-27 15:25:21.499095	2017-12-27 15:25:21.499095	56	f
+53	query_application_tag	Tag	2017-12-28 10:54:08.27424	2017-12-28 10:54:08.27424	57	f
+54	query_app_by_tag	Tag	2017-12-28 12:55:54.817854	2017-12-28 12:55:54.817854	58	f
+62	remove_application	Application	2018-01-10 17:05:02.855642	2018-01-10 17:05:02.855642	63	f
+63	query_device_tags	DeviceTags	2018-01-10 19:38:47.097294	2018-01-10 19:38:47.097294	64	f
+70	query_all_vendors	Vendor	2018-01-18 14:51:03.420892	2018-01-18 14:51:03.420892	71	f
+71	create_vendor	Vendor	2018-01-19 11:31:46.26071	2018-01-19 11:31:46.26071	72	f
+72	remove_vendor	Vendor	2018-01-19 15:05:00.640729	2018-01-19 15:05:00.640729	73	f
+16	delete_solution	Solution	2017-11-15 11:35:24.973141	2017-11-15 11:35:24.973141	22	f
+9	update_solution	Solution	2017-11-09 15:56:35.91053	2017-11-09 15:56:35.91053	15	f
+36	query_all_solution_image_names	Solution	2017-12-09 06:16:39.155728	2017-12-09 06:16:39.155728	42	f
+10	query_solution_image_versions	Solution	2017-11-09 15:56:35.91053	2017-11-09 15:56:35.91053	16	f
+8	get_all_solutions	Solution	2017-11-09 15:56:35.91053	2017-11-09 15:56:35.91053	14	f
+7	get_all_solution_names	Solution	2017-11-09 15:56:35.91053	2017-11-09 15:56:35.91053	13	f
+67	query_one_solution	Solution	2018-01-12 08:58:56.02097	2018-01-12 08:58:56.02097	68	f
+40	add_solution_tag	Solution	2017-12-15 05:29:11.098665	2017-12-15 05:29:11.098665	46	f
+61	create_model	Model	2018-01-09 14:21:05.195439	2018-01-09 14:21:05.195439	62	f
+59	remove_model	Model	2018-01-09 14:21:05.195439	2018-01-09 14:21:05.195439	60	f
+60	query_models	Model	2018-01-09 14:21:05.195439	2018-01-09 14:21:05.195439	61	f
+55	update_model	Model	2018-01-03 12:05:57.762046	2018-01-03 12:05:57.762046	59	f
+37	query_one_model	Model	2017-12-10 07:49:20.153704	2017-12-10 07:49:20.153704	43	f
+19	deploy_solution	OTA	2017-11-29 16:43:48.699381	2017-11-29 16:43:48.699381	25	f
+20	query_ota_status	OTA	2017-11-29 16:47:53.382196	2017-11-29 16:47:53.382196	26	f
+73	query_app_tags	Application	2018-02-07 10:08:14.392557	2018-02-07 10:08:14.392557	57	f
+38	query_one_application	Application	2017-12-12 12:04:01.131586	2017-12-12 12:04:01.131586	44	f
+74	get_all_apps	Application	2018-02-07 10:14:34.597042	2018-02-07 10:14:34.597042	74	f
+78	get_builder_environments	Builder	2018-02-07 10:44:09.617289	2018-02-07 10:44:09.617289	77	f
+79	get_builder_repositories	Builder	2018-02-07 10:44:21.459888	2018-02-07 10:44:21.459888	78	f
+80	get_builder_projects	Builder	2018-02-07 10:44:33.788373	2018-02-07 10:44:33.788373	79	f
+81	create_builder_project	Builder	2018-02-07 10:44:47.621807	2018-02-07 10:44:47.621807	80	f
+82	delete_builder_project	Builder	2018-02-07 10:44:58.295112	2018-02-07 10:44:58.295112	81	f
+83	get_builder_project_detail	Builder	2018-02-07 10:45:09.721371	2018-02-07 10:45:09.721371	82	f
+84	start_builder_project	Builder	2018-02-07 10:45:22.324187	2018-02-07 10:45:22.324187	83	f
+85	update_builder_project	Builder	2018-02-07 10:45:35.129287	2018-02-07 10:45:35.129287	84	f
+86	get_device_id_no	EST	2018-02-08 04:37:50.83266	2018-02-08 04:37:50.83266	85	f
+87	query_solution_tags	Solution	2018-02-08 09:27:01.774265	2018-02-08 09:27:01.774265	86	f
+88	check_solution_name	Solution	2018-03-02 09:05:45.326365	2018-03-02 09:05:45.326365	87	f
+89	get_device_logs	Log	2018-05-09 08:14:15.545694	2018-05-09 08:14:15.545694	88	f
+90	unenroll_device	Device	2018-05-10 14:58:57.118341	2018-05-10 14:58:57.118341	89	f
+91	fando	Application	2019-06-21 06:36:40.831672	2019-06-21 06:36:40.831672	90	f
+92	chjap	Application	2019-06-27 04:54:44.08369	2019-06-27 04:54:44.08369	91	f
+106	akhmo	Application	2019-09-11 22:34:57.147183	2019-09-11 22:34:57.147183	105	f
+\.
+
+
+--
+-- Data for Name: dcca_progress; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_progress (id, device_id, label, progress, message, terminated) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_resources; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_resources (id, name, action, url, description) FROM stdin;
+64	query_device_tags	GET	^/devices/[0-9]+/tags$	\N
+71	query_all_vendors	GET	^/vendors.*$	\N
+72	create_vendor	POST	^/vendors$	\N
+73	remove_vendor	DELETE	^/vendors/[0-9]+$	\N
+12	create_solution	POST	^/solutions$	\N
+22	delete_solution	DELETE	^/solutions$	\N
+15	update_solution	PUT	^/solutions$	\N
+4	device	POST	^/devices$	\N
+5	device	GET	^/devices$	\N
+63	remove_application	DELETE	^/applications/[0-9]+$	\N
+7	user_devices	GET	^/users/[0-9a-zA-Z_]+/devices$	\N
+8	resource_test	GET	^/authorizer/[0-9a-zA-Z_]+/auth$	\N
+6	device_application	GET	^/devices/[0-9a-zA-Z_]+/applications$	\N
+9	resouce	GET	^/resources$	\N
+10	view_device	PUT	^/devices$	\N
+11	test	GET	^/test$	\N
+17	query_device_by_tag	POST	^/tags/devices$	\N
+20	query_one_device	GET	^/devices/[0-9]+$	\N
+21	device	DELETE	^/devices/[0-9]+$	\N
+23	query_device_blurred_by_tag	POST	^/tags/devices/blurred$	\N
+42	query_all_solution_image_names	GET	^/solutions/images/names$	\N
+18	query_progress	GET	^/devices/progress.*$	\N
+16	query_solution_image_versions	GET	^/solutions/images/versions$	\N
+28	attribute_filter	GET	^/devices/filter/attributes.*$	\N
+29	attribute_name_filter	GET	^/devices/filter/attributes/name.*$	\N
+30	filter_by_attributes	POST	^/devices/filter/attributes$	\N
+32	batch_attach_tag	POST	^/tags/[0-9a-zA-Z]+/devices$	\N
+33	query_position	GET	^/devices/all/position.*$	\N
+34	add_private_mirror	POST	^/applications/mirrors/private$	\N
+35	add_public_mirror	POST	^/applications/mirrors/public$	\N
+36	delete_mirror	DELETE	^/applications/mirrors/\\w+$	\N
+37	update_mirror	PUT	^/applications/mirrors$	\N
+14	get_all_solutions	GET	^/solutions.*$	\N
+13	get_all_solution_names	GET	^/solutions/names$	\N
+68	query_one_solution	GET	^/solutions/[0-9]+$	\N
+39	query_device_info	GET	^/devices/all/information.*$	\N
+40	device_statistics	GET	^/devices/all/statistics$	\N
+41	device_filter	POST	^/devices/filter$	\N
+74	get_all_apps	GET	^/applications$	
+44	query_one_application	GET	^/applications/.*$	\N
+48	query_task_by_device_id	GET	^/devices/.*/tasks$	\N
+49	create_task	POST	^/tasks$	\N
+50	query_all_tasks	GET	^/tasks$	\N
+46	add_solution_tag	POST	^/solutions/tags$	\N
+51	query_one_task	GET	^/tasks/[0-9]+$	\N
+52	remove_task	DELETE	^/tasks/[0-9]+$	\N
+53	get_certificate	GET	^/devices/certificates$	\N
+54	create_device_position	POST	^/devices/all/position$	\N
+57	query_app_tags	GET	^/applications/tags.*$	\N
+47	delete_solution_tag	DELETE	^/solutions/tags$	\N
+62	create_model	POST	^/models$	\N
+60	remove_model	DELETE	^/models$	\N
+61	query_models	GET	^/models.*$	\N
+59	update_model	PUT	^/models/[0-9]+$	\N
+43	query_one_model	GET	^/models/[0-9]+$	\N
+25	deploy_solution	POST	^/devices/tasks$	\N
+26	query_ota_status	GET	^/devices/tasks/status.*$	\N
+58	query_app_by_tag	GET	^/applications/filter$	\N
+55	attach_tag_to_app	POST	^/applications/[0-9]+/tags$	\N
+56	remove_tag_from_app	DELETE	^/applications/[0-9]+/tags$	\N
+77	get_builder_environments	GET	^/builder/environments$	\N
+78	get_builder_repositories	GET	^/builder/repositories$	\N
+79	get_builder_projects	GET	^/builder/projects$	\N
+80	create_builder_project	POST	^/builder/projects$	\N
+81	delete_builder_project	DELETE	^/builder/projects/.*$	\N
+82	get_builder_project_detail	GET	^/builder/projects/.*$	\N
+83	start_builder_project	POST	^/builder/projects/.*$	\N
+84	update_builder_project	PUT	^/builder/projects/.*$	\N
+85	get_device_id_no	GET	^/est/device.*$	\N
+86	query_solution_tags	GET	^/solutions/tags$	\N
+87	check_solution_name	POST	^/solutions/names$	\N
+88	get_device_logs	GET	^/devices/logs.*$	\N
+89	unenroll_device	POST	^/devices/unenrollment$	\N
+90	fando	POST	^/applications/[0-9]+$	\N
+91	chjap	POST	^/applications/[0-9]+$	\N
+105	akhmo	POST	^/applications/[0-9]+$	\N
+\.
+
+
+--
+-- Data for Name: dcca_roles; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_roles (name, description, id, created_at, updated_at) FROM stdin;
+defaultRole	Default role of user	1	2019-04-04 05:54:34.374362	2019-04-04 05:54:34.388856
+solutionRole	\N	2	2019-04-04 05:54:34.374362	2019-04-04 05:54:34.388856
+appTagRole	\N	3	2019-04-04 05:54:34.374362	2019-04-04 05:54:34.388856
+Application	\N	4	2019-04-04 05:54:34.374362	2019-04-04 05:54:34.388856
+VendorRole	\N	5	2019-04-04 05:54:34.374362	2019-04-04 05:54:34.388856
+\.
+
+
+--
+-- Data for Name: dcca_services; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_services (id, uid, name, server_certificate_format, server_certificate_key, connection_url, config, signing_certificate_format, signing_certificate_key, protocal, cipher_suite, user_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_softapps; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_softapps (id, name, version, mirror_id, image_name, application_id, commands, args, hostnetwork, ports, volumes, volume_mounts, cap_add, morepara) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_softwares; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_softwares (swid, version_id, date, url, name) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_solution_audit; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_solution_audit (id, user_id, created_at, approved, comments, solution_id, status, to_public) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_solution_sign; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_solution_sign (id, solution_id, key_id, description, created_at, updated_at, status) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_sw_versions; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_sw_versions (id, major, minor) FROM stdin;
+1	1709	1
+2	1709	2
+3	1709	3
+\.
+
+
+--
+-- Data for Name: dcca_tag_types; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_tag_types (id, name, "desc") FROM stdin;
+1	solution	The tags for solution
+2	user	The tags for users
+\.
+
+
+--
+-- Data for Name: dcca_tags; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_tags (id, name, description) FROM stdin;
+1	atnmk	\N
+\.
+
+
+--
+-- Data for Name: dcca_task_status; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_task_status (id, name) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_task_template; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_task_template (id, name, "desc", owner_id, created_at, updated_at, body) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_task_types; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_task_types (id, name) FROM stdin;
+1	update_firmware
+\.
+
+
+--
+-- Data for Name: dcca_tasks; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_tasks (id, device_id, start_time, end_time, type_id, status_id, solution_id, ota_status_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: dcca_user_limit_type; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_user_limit_type (id, name, "desc", default_max_limit, default_max_sec, is_per_time) FROM stdin;
+6	max_create_solution	\N	20	\N	f
+1	device	The max device number user can create	20	\N	f
+2	deploy	The max docker container number user can deploy	20	\N	f
+5	max_bind_model	\N	30	\N	f
+3	deploy_max_per_time_install	The maximum can deploy app per-time limit 	10	180	t
+4	deploy_max_per_time_uninstall	\N	20	360	t
+\.
+
+
+--
+-- Data for Name: dcca_user_limits; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_user_limits (id, user_id, limit_type_id, max_limit, max_sec) FROM stdin;
+1	3	1	20	\N
+2	3	2	20	\N
+3	3	3	10	180
+4	3	4	20	360
+5	3	5	30	\N
+6	3	6	20	\N
+9	4	3	10	180
+10	4	4	20	360
+11	4	5	30	\N
+12	4	6	20	\N
+7	4	1	1000000	\N
+8	4	2	1000000	\N
+\.
+
+
+--
+-- Data for Name: dcca_users; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_users (id, username, email, display_name, admin, password_hash, password_salt, mail_enabled, update_at, created_at, timezone, is_marketing, account_type_id, image, token_expire_hours, oem_id, status) FROM stdin;
+3	admin_test	admin_test@test.com	\N	t	b6417f2fcde64bca03c7938de077f3d5	5hnDPioVEpG0TZAvYWwOm1yNHceCrz3F	f	2019-09-11 05:17:52.143301	2019-09-11 05:17:52.143301	\N	f	4	\N	24		t
+4	oem_test	oem_test@test.com		f	3ae1ecee890f5ea67c2a4dcd472acb04	4ULDVRKdXhFjtO1NfMcGCu0ln5QrZIW8	f	2019-09-11 05:17:52.143301	2019-09-11 05:17:52.143301	\N	f	2	\N	24	10110110001001101010000100000000	t
+\.
+
+
+--
+-- Data for Name: dcca_vendors; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.dcca_vendors (id, name, is_public, created_at, updated_at) FROM stdin;
+1	bhfcj	t	2019-09-11 22:34:56.232986	2019-09-11 22:34:56.232986
+\.
+
+
+--
+-- Data for Name: edgescale_app; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.edgescale_app (appname, deviceid, userid, cfgfactory, appstatus, appmessage, appcreatetime, lastupdate, task, reason) FROM stdin;
+\.
+
+
+--
+-- Data for Name: edgescale_tasks; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.edgescale_tasks (id, type, payload, status, "timestamp", logical_delete) FROM stdin;
+\.
+
+
+--
+-- Data for Name: es_task_da_inst; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.es_task_da_inst (id, task_id, device_id, softapp_id, status, status_payload, created_at, updated_at, payload) FROM stdin;
+\.
+
+
+--
+-- Data for Name: es_task_device_inst; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.es_task_device_inst (id, task_id, device_id, created_at, payload, status, result) FROM stdin;
+\.
+
+
+--
+-- Data for Name: es_task_ota_inst; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.es_task_ota_inst (id, task_id, device_id, solution_id, status, status_payload, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: es_tasks; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.es_tasks (id, type, status, payloads, created_at, owner_id, logical_delete, started_at, ended_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: hosts; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.hosts (id, name, last_report, updated_at, created_at, owner_id, certname, dcca_model_id, display_name, customer_id, solution_id, online, lifecycle, oem_uid) FROM stdin;
+\.
+
+
+--
+-- Data for Name: scale_subdev_attr; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.scale_subdev_attr (id, created_at, updated_at, subdevid, name, status, shadow) FROM stdin;
+\.
+
+
+--
+-- Data for Name: scale_subdev_reg; Type: TABLE DATA; Schema: public; Owner: root
+--
+
+COPY public.scale_subdev_reg (id, created_at, updated_at, name, model_id, devid, gwid, hostid, topic, status, disname, description, get, set, ota, owner_id) FROM stdin;
+\.
+
+
+--
+-- Name: dcca_access_records_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_access_records_id_seq', 1, false);
+
+
+--
+-- Name: dcca_account_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_account_type_id_seq', 1, false);
+
+
+--
+-- Name: dcca_accounts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_accounts_id_seq', 1, true);
+
+
+--
+-- Name: dcca_api_access_records_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_api_access_records_id_seq', 1, false);
+
+
+--
+-- Name: dcca_app_mirror_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_app_mirror_id_seq', 1, true);
+
+
+--
+-- Name: dcca_applications_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_applications_id_seq', 2, true);
+
+
+--
+-- Name: dcca_apply_apps_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_apply_apps_id_seq', 1, true);
+
+
+--
+-- Name: dcca_ass_host_model_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_ass_host_model_id_seq', 1, false);
+
+
+--
+-- Name: dcca_ass_model_software_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_ass_model_software_id_seq', 1, false);
+
+
+--
+-- Name: dcca_ass_solution_images_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_ass_solution_images_id_seq', 1, false);
+
+
+--
+-- Name: dcca_ass_user_role_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_ass_user_role_id_seq', 4, true);
+
+
+--
+-- Name: dcca_audit_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_audit_id_seq', 1, false);
+
+
+--
+-- Name: dcca_builder_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_builder_id_seq', 1, false);
+
+
+--
+-- Name: dcca_certificates_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_certificates_id_seq', 1, true);
+
+
+--
+-- Name: dcca_ci_tasks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_ci_tasks_id_seq', 1, false);
+
+
+--
+-- Name: dcca_continents_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_continents_id_seq', 7, true);
+
+
+--
+-- Name: dcca_deploy_recoreds_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_deploy_recoreds_id_seq', 1, false);
+
+
+--
+-- Name: dcca_device_attributes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_device_attributes_id_seq', 2, true);
+
+
+--
+-- Name: dcca_device_ip_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_device_ip_id_seq', 1, false);
+
+
+--
+-- Name: dcca_device_nics_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_device_nics_id_seq', 1, false);
+
+
+--
+-- Name: dcca_hardwares_hwid_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_hardwares_hwid_seq', 1, false);
+
+
+--
+-- Name: dcca_locations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_locations_id_seq', 153, true);
+
+
+--
+-- Name: dcca_ml_docker_deployment_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_ml_docker_deployment_id_seq', 1, false);
+
+
+--
+-- Name: dcca_ml_docker_tasks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_ml_docker_tasks_id_seq', 1, false);
+
+
+--
+-- Name: dcca_notify_messages_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_notify_messages_id_seq', 1, false);
+
+
+--
+-- Name: dcca_ota_status_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_ota_status_id_seq', 1, false);
+
+
+--
+-- Name: dcca_permissions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_permissions_id_seq', 106, true);
+
+
+--
+-- Name: dcca_progress_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_progress_id_seq', 1, false);
+
+
+--
+-- Name: dcca_resources_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_resources_id_seq', 105, true);
+
+
+--
+-- Name: dcca_roles_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_roles_id_seq', 3, true);
+
+
+--
+-- Name: dcca_services_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_services_id_seq', 1, false);
+
+
+--
+-- Name: dcca_softapps_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_softapps_id_seq', 3, true);
+
+
+--
+-- Name: dcca_solution_audit_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_solution_audit_id_seq', 1, false);
+
+
+--
+-- Name: dcca_solution_sign_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_solution_sign_id_seq', 1, false);
+
+
+--
+-- Name: dcca_tag_types_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_tag_types_id_seq', 2, true);
+
+
+--
+-- Name: dcca_tags_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_tags_id_seq', 1, true);
+
+
+--
+-- Name: dcca_task_status_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_task_status_id_seq', 1, false);
+
+
+--
+-- Name: dcca_task_types_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_task_types_id_seq', 1, true);
+
+
+--
+-- Name: dcca_tasks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_tasks_id_seq', 1, false);
+
+
+--
+-- Name: dcca_user_limit_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_user_limit_type_id_seq', 8, true);
+
+
+--
+-- Name: dcca_user_limits_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_user_limits_id_seq', 12, true);
+
+
+--
+-- Name: dcca_users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_users_id_seq', 5, true);
+
+
+--
+-- Name: dcca_vendor_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.dcca_vendor_id_seq', 1, true);
+
+
+--
+-- Name: edgescale_tasks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.edgescale_tasks_id_seq', 1, false);
+
+
+--
+-- Name: es_tasks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.es_tasks_id_seq', 1, false);
+
+
+--
+-- Name: hosts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.hosts_id_seq', 1, false);
+
+
+--
+-- Name: scale_subdev_attr_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.scale_subdev_attr_id_seq', 1, false);
+
+
+--
+-- Name: scale_subdev_reg_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.scale_subdev_reg_id_seq', 1, false);
+
+
+--
+-- Name: softwares_swid_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.softwares_swid_seq', 1, false);
+
+
+--
+-- Name: sw_models_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.sw_models_id_seq', 1, false);
+
+
+--
+-- Name: sw_versions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
+--
+
+SELECT pg_catalog.setval('public.sw_versions_id_seq', 3, true);
+
+
+--
+-- Name: dcca_access_records dcca_access_records_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_access_records
+    ADD CONSTRAINT dcca_access_records_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_account_types dcca_account_type_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_account_types
+    ADD CONSTRAINT dcca_account_type_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_accounts dcca_accounts_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_accounts
+    ADD CONSTRAINT dcca_accounts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_ai_engines dcca_ai_engines_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ai_engines
+    ADD CONSTRAINT dcca_ai_engines_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_ai_models dcca_ai_models_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ai_models
+    ADD CONSTRAINT dcca_ai_models_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_api_access_records dcca_api_access_records_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_api_access_records
+    ADD CONSTRAINT dcca_api_access_records_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_app_mirror dcca_app_mirror_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_app_mirror
+    ADD CONSTRAINT dcca_app_mirror_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_applications dcca_applications_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_applications
+    ADD CONSTRAINT dcca_applications_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_apply_apps dcca_apply_apps_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_apply_apps
+    ADD CONSTRAINT dcca_apply_apps_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_ass_ai_model_engine dcca_ass_ai_model_engine_pk; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_ai_model_engine
+    ADD CONSTRAINT dcca_ass_ai_model_engine_pk PRIMARY KEY (model_id, engine_id);
+
+
+--
+-- Name: dcca_ass_app_tag dcca_ass_app_tag_application_id_tag_id_pk; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_app_tag
+    ADD CONSTRAINT dcca_ass_app_tag_application_id_tag_id_pk PRIMARY KEY (application_id, tag_id);
+
+
+--
+-- Name: dcca_ass_device_group dcca_ass_device_group_device_id_pk; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_device_group
+    ADD CONSTRAINT dcca_ass_device_group_device_id_pk PRIMARY KEY (device_id, group_id);
+
+
+--
+-- Name: dcca_ass_device_tag dcca_ass_device_tag_device_id_tag_id_pk; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_device_tag
+    ADD CONSTRAINT dcca_ass_device_tag_device_id_tag_id_pk PRIMARY KEY (device_id, tag_id);
+
+
+--
+-- Name: dcca_ass_device_task dcca_ass_device_task_device_id_task_id_pk; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_device_task
+    ADD CONSTRAINT dcca_ass_device_task_device_id_task_id_pk PRIMARY KEY (device_id, task_id);
+
+
+--
+-- Name: dcca_ass_host_model dcca_ass_host_model_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_host_model
+    ADD CONSTRAINT dcca_ass_host_model_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_ass_model_service dcca_ass_model_service_model_id_service_id_pk; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_model_service
+    ADD CONSTRAINT dcca_ass_model_service_model_id_service_id_pk PRIMARY KEY (model_id, service_id);
+
+
+--
+-- Name: dcca_ass_model_software dcca_ass_model_software_id_pk; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_model_software
+    ADD CONSTRAINT dcca_ass_model_software_id_pk PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_ass_role_perm dcca_ass_role_perm_role_perm_id_pk; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_role_perm
+    ADD CONSTRAINT dcca_ass_role_perm_role_perm_id_pk PRIMARY KEY (role_id, perm_id);
+
+
+--
+-- Name: dcca_ass_solution_images dcca_ass_solution_images_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_solution_images
+    ADD CONSTRAINT dcca_ass_solution_images_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_ass_solution_tag dcca_ass_solution_tag_solution_id_tag_id_pk; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_solution_tag
+    ADD CONSTRAINT dcca_ass_solution_tag_solution_id_tag_id_pk PRIMARY KEY (solution_id, tag_id);
+
+
+--
+-- Name: dcca_ass_user_device dcca_ass_user_device_user_id_device_id_pk; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_user_device
+    ADD CONSTRAINT dcca_ass_user_device_user_id_device_id_pk UNIQUE (user_id, device_id);
+
+
+--
+-- Name: dcca_ass_user_role dcca_ass_user_role_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_user_role
+    ADD CONSTRAINT dcca_ass_user_role_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_ass_user_solution dcca_ass_user_solution_user_id_solution_id_pk; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_user_solution
+    ADD CONSTRAINT dcca_ass_user_solution_user_id_solution_id_pk PRIMARY KEY (user_id, solution_id);
+
+
+--
+-- Name: dcca_ass_user_task dcca_ass_user_task_user_id_task_id_pk; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_user_task
+    ADD CONSTRAINT dcca_ass_user_task_user_id_task_id_pk PRIMARY KEY (user_id, task_id);
+
+
+--
+-- Name: dcca_ass_user_vendor dcca_ass_user_vendor_user_id_vendor_id_pk; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_user_vendor
+    ADD CONSTRAINT dcca_ass_user_vendor_user_id_vendor_id_pk PRIMARY KEY (user_id, vendor_id);
+
+
+--
+-- Name: dcca_audit dcca_audit_pk; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_audit
+    ADD CONSTRAINT dcca_audit_pk PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_builder dcca_builder_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_builder
+    ADD CONSTRAINT dcca_builder_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_ci_tasks dcca_ci_tasks_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ci_tasks
+    ADD CONSTRAINT dcca_ci_tasks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_common_services dcca_common_services_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_common_services
+    ADD CONSTRAINT dcca_common_services_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_continents dcca_continents_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_continents
+    ADD CONSTRAINT dcca_continents_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_customers dcca_customers_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_customers
+    ADD CONSTRAINT dcca_customers_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_deploy_recoreds dcca_deploy_recoreds_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_deploy_recoreds
+    ADD CONSTRAINT dcca_deploy_recoreds_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_device_attributes dcca_device_attributes_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_device_attributes
+    ADD CONSTRAINT dcca_device_attributes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_device_groups dcca_device_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_device_groups
+    ADD CONSTRAINT dcca_device_groups_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_device_ip dcca_device_ip_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_device_ip
+    ADD CONSTRAINT dcca_device_ip_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_device_nics dcca_device_nics_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_device_nics
+    ADD CONSTRAINT dcca_device_nics_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_device_position dcca_device_position_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_device_position
+    ADD CONSTRAINT dcca_device_position_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_docker_deployment dcca_docker_deployment_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_docker_deployment
+    ADD CONSTRAINT dcca_docker_deployment_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_hardwares dcca_hardwares_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_hardwares
+    ADD CONSTRAINT dcca_hardwares_pkey PRIMARY KEY (hwid);
+
+
+--
+-- Name: dcca_locations dcca_locations_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_locations
+    ADD CONSTRAINT dcca_locations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_ml_docker_deployment dcca_ml_docker_deployment_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ml_docker_deployment
+    ADD CONSTRAINT dcca_ml_docker_deployment_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_ml_docker_tasks dcca_ml_docker_tasks_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ml_docker_tasks
+    ADD CONSTRAINT dcca_ml_docker_tasks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_notify_messages dcca_notify_messages_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_notify_messages
+    ADD CONSTRAINT dcca_notify_messages_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_ota_status dcca_ota_status_id_uindex; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ota_status
+    ADD CONSTRAINT dcca_ota_status_id_uindex UNIQUE (id);
+
+
+--
+-- Name: dcca_ota_status dcca_ota_status_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ota_status
+    ADD CONSTRAINT dcca_ota_status_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_permissions dcca_permissions_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_permissions
+    ADD CONSTRAINT dcca_permissions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_progress dcca_progress_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_progress
+    ADD CONSTRAINT dcca_progress_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_resources dcca_resources_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_resources
+    ADD CONSTRAINT dcca_resources_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_roles dcca_roles_id_pk; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_roles
+    ADD CONSTRAINT dcca_roles_id_pk PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_services dcca_services_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_services
+    ADD CONSTRAINT dcca_services_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_softapps dcca_softapps_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_softapps
+    ADD CONSTRAINT dcca_softapps_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_certificates dcca_solu_certificates_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_certificates
+    ADD CONSTRAINT dcca_solu_certificates_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_solution_audit dcca_solution_audit_pk; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_solution_audit
+    ADD CONSTRAINT dcca_solution_audit_pk PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_solution_sign dcca_solution_sign_pk; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_solution_sign
+    ADD CONSTRAINT dcca_solution_sign_pk PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_tag_types dcca_tag_types_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_tag_types
+    ADD CONSTRAINT dcca_tag_types_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_tags dcca_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_tags
+    ADD CONSTRAINT dcca_tags_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_task_status dcca_task_status_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_task_status
+    ADD CONSTRAINT dcca_task_status_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_task_template dcca_task_template_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_task_template
+    ADD CONSTRAINT dcca_task_template_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_task_types dcca_task_types_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_task_types
+    ADD CONSTRAINT dcca_task_types_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_tasks dcca_tasks_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_tasks
+    ADD CONSTRAINT dcca_tasks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_user_limit_type dcca_user_limit_type_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_user_limit_type
+    ADD CONSTRAINT dcca_user_limit_type_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_user_limits dcca_user_limits_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_user_limits
+    ADD CONSTRAINT dcca_user_limits_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_users dcca_users_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_users
+    ADD CONSTRAINT dcca_users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_vendors dcca_vendor_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_vendors
+    ADD CONSTRAINT dcca_vendor_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: edgescale_app edgescale_app_pk; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.edgescale_app
+    ADD CONSTRAINT edgescale_app_pk PRIMARY KEY (appname, deviceid);
+
+
+--
+-- Name: edgescale_tasks edgescale_tasks_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.edgescale_tasks
+    ADD CONSTRAINT edgescale_tasks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: es_task_device_inst es_task_device_inst_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.es_task_device_inst
+    ADD CONSTRAINT es_task_device_inst_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: es_task_da_inst es_task_inst_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.es_task_da_inst
+    ADD CONSTRAINT es_task_inst_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: es_task_ota_inst es_task_ota_inst_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.es_task_ota_inst
+    ADD CONSTRAINT es_task_ota_inst_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: es_tasks es_tasks_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.es_tasks
+    ADD CONSTRAINT es_tasks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: hosts hosts_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.hosts
+    ADD CONSTRAINT hosts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: scale_subdev_attr scale_subdev_attr_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.scale_subdev_attr
+    ADD CONSTRAINT scale_subdev_attr_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: scale_subdev_reg scale_subdev_reg_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.scale_subdev_reg
+    ADD CONSTRAINT scale_subdev_reg_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_softwares softwares_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_softwares
+    ADD CONSTRAINT softwares_pkey PRIMARY KEY (swid);
+
+
+--
+-- Name: dcca_models sw_models_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_models
+    ADD CONSTRAINT sw_models_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_sw_versions sw_versions_pkey; Type: CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_sw_versions
+    ADD CONSTRAINT sw_versions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: dcca_access_records_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_access_records_id_uindex ON public.dcca_access_records USING btree (id);
+
+
+--
+-- Name: dcca_account_type_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_account_type_id_uindex ON public.dcca_account_types USING btree (id);
+
+
+--
+-- Name: dcca_account_type_name_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_account_type_name_uindex ON public.dcca_account_types USING btree (name);
+
+
+--
+-- Name: dcca_accounts_email_address_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_accounts_email_address_uindex ON public.dcca_accounts USING btree (email);
+
+
+--
+-- Name: dcca_accounts_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_accounts_id_uindex ON public.dcca_accounts USING btree (id);
+
+
+--
+-- Name: dcca_api_access_records_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_api_access_records_id_uindex ON public.dcca_api_access_records USING btree (id);
+
+
+--
+-- Name: dcca_api_access_records_user_id_access_date_index; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE INDEX dcca_api_access_records_user_id_access_date_index ON public.dcca_api_access_records USING btree (user_id, access_date);
+
+
+--
+-- Name: dcca_app_mirror_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_app_mirror_id_uindex ON public.dcca_app_mirror USING btree (id);
+
+
+--
+-- Name: dcca_app_mirror_name_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_app_mirror_name_uindex ON public.dcca_app_mirror USING btree (name);
+
+
+--
+-- Name: dcca_apply_apps_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_apply_apps_id_uindex ON public.dcca_apply_apps USING btree (id);
+
+
+--
+-- Name: dcca_ass_host_model_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_ass_host_model_id_uindex ON public.dcca_ass_host_model USING btree (id);
+
+
+--
+-- Name: dcca_ass_model_software_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_ass_model_software_id_uindex ON public.dcca_ass_model_software USING btree (id);
+
+
+--
+-- Name: dcca_ass_user_role_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_ass_user_role_id_uindex ON public.dcca_ass_user_role USING btree (id);
+
+
+--
+-- Name: dcca_continents_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_continents_id_uindex ON public.dcca_continents USING btree (id);
+
+
+--
+-- Name: dcca_deploy_recoreds_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_deploy_recoreds_id_uindex ON public.dcca_deploy_recoreds USING btree (id);
+
+
+--
+-- Name: dcca_device_attributes_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_device_attributes_id_uindex ON public.dcca_device_attributes USING btree (id);
+
+
+--
+-- Name: dcca_device_ip_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_device_ip_id_uindex ON public.dcca_device_ip USING btree (id);
+
+
+--
+-- Name: dcca_device_nics_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_device_nics_id_uindex ON public.dcca_device_nics USING btree (id);
+
+
+--
+-- Name: dcca_device_position_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_device_position_id_uindex ON public.dcca_device_position USING btree (id);
+
+
+--
+-- Name: dcca_device_position_location_id_index; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE INDEX dcca_device_position_location_id_index ON public.dcca_device_position USING btree (location_id);
+
+
+--
+-- Name: dcca_hardwares_hwid_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_hardwares_hwid_uindex ON public.dcca_hardwares USING btree (hwid);
+
+
+--
+-- Name: dcca_locations_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_locations_id_uindex ON public.dcca_locations USING btree (id);
+
+
+--
+-- Name: dcca_locations_name_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_locations_name_uindex ON public.dcca_locations USING btree (name);
+
+
+--
+-- Name: dcca_notify_messages_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_notify_messages_id_uindex ON public.dcca_notify_messages USING btree (id);
+
+
+--
+-- Name: dcca_notify_messages_owner_id_index; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE INDEX dcca_notify_messages_owner_id_index ON public.dcca_notify_messages USING btree (owner_id);
+
+
+--
+-- Name: dcca_permissions_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_permissions_id_uindex ON public.dcca_permissions USING btree (id);
+
+
+--
+-- Name: dcca_permissions_name_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_permissions_name_uindex ON public.dcca_permissions USING btree (name);
+
+
+--
+-- Name: dcca_progress_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_progress_id_uindex ON public.dcca_progress USING btree (id);
+
+
+--
+-- Name: dcca_resources_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_resources_id_uindex ON public.dcca_resources USING btree (id);
+
+
+--
+-- Name: dcca_roles_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_roles_id_uindex ON public.dcca_roles USING btree (id);
+
+
+--
+-- Name: dcca_services_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_services_id_uindex ON public.dcca_services USING btree (id);
+
+
+--
+-- Name: dcca_services_uid_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_services_uid_uindex ON public.dcca_services USING btree (uid);
+
+
+--
+-- Name: dcca_softapps_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_softapps_id_uindex ON public.dcca_softapps USING btree (id);
+
+
+--
+-- Name: dcca_solu_certificates_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_solu_certificates_id_uindex ON public.dcca_certificates USING btree (id);
+
+
+--
+-- Name: dcca_solu_certificates_solu_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_solu_certificates_solu_id_uindex ON public.dcca_certificates USING btree (user_id);
+
+
+--
+-- Name: dcca_solution_audit_solution_id_index; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE INDEX dcca_solution_audit_solution_id_index ON public.dcca_solution_audit USING btree (solution_id);
+
+
+--
+-- Name: dcca_solution_sign_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_solution_sign_id_uindex ON public.dcca_solution_sign USING btree (id);
+
+
+--
+-- Name: dcca_tag_types_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_tag_types_id_uindex ON public.dcca_tag_types USING btree (id);
+
+
+--
+-- Name: dcca_tags_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_tags_id_uindex ON public.dcca_tags USING btree (id);
+
+
+--
+-- Name: dcca_tags_name_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_tags_name_uindex ON public.dcca_tags USING btree (name);
+
+
+--
+-- Name: dcca_task_status_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_task_status_id_uindex ON public.dcca_task_status USING btree (id);
+
+
+--
+-- Name: dcca_task_types_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_task_types_id_uindex ON public.dcca_task_types USING btree (id);
+
+
+--
+-- Name: dcca_tasks_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_tasks_id_uindex ON public.dcca_tasks USING btree (id);
+
+
+--
+-- Name: dcca_user_limit_type_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_user_limit_type_id_uindex ON public.dcca_user_limit_type USING btree (id);
+
+
+--
+-- Name: dcca_user_limits_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_user_limits_id_uindex ON public.dcca_user_limits USING btree (id);
+
+
+--
+-- Name: dcca_user_limits_user_id_index; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE INDEX dcca_user_limits_user_id_index ON public.dcca_user_limits USING btree (user_id);
+
+
+--
+-- Name: dcca_users_email_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_users_email_uindex ON public.dcca_users USING btree (email);
+
+
+--
+-- Name: dcca_users_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_users_id_uindex ON public.dcca_users USING btree (id);
+
+
+--
+-- Name: dcca_users_username_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_users_username_uindex ON public.dcca_users USING btree (username);
+
+
+--
+-- Name: dcca_vendor_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_vendor_id_uindex ON public.dcca_vendors USING btree (id);
+
+
+--
+-- Name: dcca_vendor_name_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX dcca_vendor_name_uindex ON public.dcca_vendors USING btree (name);
+
+
+--
+-- Name: edgescale_app_deviceid_index; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE INDEX edgescale_app_deviceid_index ON public.edgescale_app USING btree (deviceid);
+
+
+--
+-- Name: edgescale_tasks_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX edgescale_tasks_id_uindex ON public.edgescale_tasks USING btree (id);
+
+
+--
+-- Name: es_task_inst_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX es_task_inst_id_uindex ON public.es_task_da_inst USING btree (id);
+
+
+--
+-- Name: es_task_ota_inst_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX es_task_ota_inst_id_uindex ON public.es_task_ota_inst USING btree (id);
+
+
+--
+-- Name: es_tasks_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX es_tasks_id_uindex ON public.es_tasks USING btree (id);
+
+
+--
+-- Name: host_certname_left_32_index; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE INDEX host_certname_left_32_index ON public.hosts USING btree ("left"((certname)::text, 32));
+
+
+--
+-- Name: host_customer_id_index; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE INDEX host_customer_id_index ON public.hosts USING btree (customer_id);
+
+
+--
+-- Name: host_to_model_id_index; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE INDEX host_to_model_id_index ON public.dcca_ass_host_model USING btree (host_id, model_id);
+
+
+--
+-- Name: hosts_dcca_model_id_owner_id_index; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE INDEX hosts_dcca_model_id_owner_id_index ON public.hosts USING btree (dcca_model_id, owner_id);
+
+
+--
+-- Name: hosts_id_index; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE INDEX hosts_id_index ON public.hosts USING btree (id) WHERE (online = true);
+
+
+--
+-- Name: hosts_name_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX hosts_name_uindex ON public.hosts USING btree (name);
+
+
+--
+-- Name: hosts_oem_uid_index; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE INDEX hosts_oem_uid_index ON public.hosts USING btree (oem_uid);
+
+
+--
+-- Name: hosts_owner_id_index; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE INDEX hosts_owner_id_index ON public.hosts USING btree (owner_id);
+
+
+--
+-- Name: hosts_solution_id_index; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE INDEX hosts_solution_id_index ON public.hosts USING btree (solution_id);
+
+
+--
+-- Name: idx_scale_subdev_reg_devid; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE INDEX idx_scale_subdev_reg_devid ON public.scale_subdev_reg USING btree (devid);
+
+
+--
+-- Name: idx_scale_subdev_reg_gwid; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE INDEX idx_scale_subdev_reg_gwid ON public.scale_subdev_reg USING btree (gwid);
+
+
+--
+-- Name: idx_scale_subdev_reg_hostid; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE INDEX idx_scale_subdev_reg_hostid ON public.scale_subdev_reg USING btree (hostid);
+
+
+--
+-- Name: idx_scale_subdev_reg_model_id; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE INDEX idx_scale_subdev_reg_model_id ON public.scale_subdev_reg USING btree (model_id);
+
+
+--
+-- Name: idx_scale_subdev_reg_name; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE INDEX idx_scale_subdev_reg_name ON public.scale_subdev_reg USING btree (name);
+
+
+--
+-- Name: model_id_index; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE INDEX model_id_index ON public.dcca_models USING btree (id);
+
+
+--
+-- Name: model_index; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE INDEX model_index ON public.hosts USING btree (dcca_model_id);
+
+
+--
+-- Name: sw_models_id_uindex; Type: INDEX; Schema: public; Owner: root
+--
+
+CREATE UNIQUE INDEX sw_models_id_uindex ON public.dcca_models USING btree (id);
+
+
+--
+-- Name: dcca_accounts dcca_accounts_dcca_account_types_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_accounts
+    ADD CONSTRAINT dcca_accounts_dcca_account_types_id_fk FOREIGN KEY (account_type_id) REFERENCES public.dcca_account_types(id);
+
+
+--
+-- Name: dcca_ai_models dcca_ai_models_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ai_models
+    ADD CONSTRAINT dcca_ai_models_dcca_users_id_fk FOREIGN KEY (owner_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_api_access_records dcca_api_access_records_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_api_access_records
+    ADD CONSTRAINT dcca_api_access_records_dcca_users_id_fk FOREIGN KEY (user_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_app_mirror dcca_app_mirror_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_app_mirror
+    ADD CONSTRAINT dcca_app_mirror_dcca_users_id_fk FOREIGN KEY (user_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_applications dcca_applications_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_applications
+    ADD CONSTRAINT dcca_applications_dcca_users_id_fk FOREIGN KEY (owner_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_applications dcca_applications_dcca_vendors_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_applications
+    ADD CONSTRAINT dcca_applications_dcca_vendors_id_fk FOREIGN KEY (vendor_id) REFERENCES public.dcca_vendors(id);
+
+
+--
+-- Name: dcca_apply_apps dcca_apply_apps_dcca_applications_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_apply_apps
+    ADD CONSTRAINT dcca_apply_apps_dcca_applications_id_fk FOREIGN KEY (app_id) REFERENCES public.dcca_applications(id);
+
+
+--
+-- Name: dcca_apply_apps dcca_apply_apps_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_apply_apps
+    ADD CONSTRAINT dcca_apply_apps_dcca_users_id_fk FOREIGN KEY (user_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_ass_app_tag dcca_ass_app_tag_dcca_applications_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_app_tag
+    ADD CONSTRAINT dcca_ass_app_tag_dcca_applications_id_fk FOREIGN KEY (application_id) REFERENCES public.dcca_applications(id);
+
+
+--
+-- Name: dcca_ass_app_tag dcca_ass_app_tag_dcca_tags_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_app_tag
+    ADD CONSTRAINT dcca_ass_app_tag_dcca_tags_id_fk FOREIGN KEY (tag_id) REFERENCES public.dcca_tags(id);
+
+
+--
+-- Name: dcca_ass_device_tag dcca_ass_device_tag_dcca_tags_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_device_tag
+    ADD CONSTRAINT dcca_ass_device_tag_dcca_tags_id_fk FOREIGN KEY (tag_id) REFERENCES public.dcca_tags(id);
+
+
+--
+-- Name: dcca_ass_device_tag dcca_ass_device_tag_hosts_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_device_tag
+    ADD CONSTRAINT dcca_ass_device_tag_hosts_id_fk FOREIGN KEY (device_id) REFERENCES public.hosts(id);
+
+
+--
+-- Name: dcca_ass_device_task dcca_ass_device_task_edgescale_tasks_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_device_task
+    ADD CONSTRAINT dcca_ass_device_task_edgescale_tasks_id_fk FOREIGN KEY (task_id) REFERENCES public.edgescale_tasks(id);
+
+
+--
+-- Name: dcca_ass_device_task dcca_ass_device_task_hosts_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_device_task
+    ADD CONSTRAINT dcca_ass_device_task_hosts_id_fk FOREIGN KEY (device_id) REFERENCES public.hosts(id);
+
+
+--
+-- Name: dcca_ass_host_model dcca_ass_host_model_dcca_models_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_host_model
+    ADD CONSTRAINT dcca_ass_host_model_dcca_models_id_fk FOREIGN KEY (model_id) REFERENCES public.dcca_models(id);
+
+
+--
+-- Name: dcca_ass_host_model dcca_ass_host_model_hosts_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_host_model
+    ADD CONSTRAINT dcca_ass_host_model_hosts_id_fk FOREIGN KEY (host_id) REFERENCES public.hosts(id);
+
+
+--
+-- Name: dcca_ass_model_service dcca_ass_model_service_dcca_models_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_model_service
+    ADD CONSTRAINT dcca_ass_model_service_dcca_models_id_fk FOREIGN KEY (model_id) REFERENCES public.dcca_models(id);
+
+
+--
+-- Name: dcca_ass_model_service dcca_ass_model_service_dcca_services_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_model_service
+    ADD CONSTRAINT dcca_ass_model_service_dcca_services_id_fk FOREIGN KEY (service_id) REFERENCES public.dcca_services(id);
+
+
+--
+-- Name: dcca_ass_model_software dcca_ass_model_software_dcca_models_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_model_software
+    ADD CONSTRAINT dcca_ass_model_software_dcca_models_id_fk FOREIGN KEY (model_id) REFERENCES public.dcca_models(id);
+
+
+--
+-- Name: dcca_ass_model_software dcca_ass_model_software_dcca_softwares_swid_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_model_software
+    ADD CONSTRAINT dcca_ass_model_software_dcca_softwares_swid_fk FOREIGN KEY (software_id) REFERENCES public.dcca_softwares(swid);
+
+
+--
+-- Name: dcca_ass_role_perm dcca_ass_role_perm_dcca_permissions_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_role_perm
+    ADD CONSTRAINT dcca_ass_role_perm_dcca_permissions_id_fk FOREIGN KEY (perm_id) REFERENCES public.dcca_permissions(id);
+
+
+--
+-- Name: dcca_ass_role_perm dcca_ass_role_perm_dcca_roles_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_role_perm
+    ADD CONSTRAINT dcca_ass_role_perm_dcca_roles_id_fk FOREIGN KEY (role_id) REFERENCES public.dcca_roles(id);
+
+
+--
+-- Name: dcca_ass_solution_images dcca_ass_solution_images_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_solution_images
+    ADD CONSTRAINT dcca_ass_solution_images_dcca_users_id_fk FOREIGN KEY (owner_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_ass_solution_images dcca_ass_solution_images_model_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_solution_images
+    ADD CONSTRAINT dcca_ass_solution_images_model_id_fkey FOREIGN KEY (model_id) REFERENCES public.dcca_models(id);
+
+
+--
+-- Name: dcca_ass_solution_tag dcca_ass_solution_tag_dcca_ass_solution_images_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_solution_tag
+    ADD CONSTRAINT dcca_ass_solution_tag_dcca_ass_solution_images_id_fk FOREIGN KEY (solution_id) REFERENCES public.dcca_ass_solution_images(id);
+
+
+--
+-- Name: dcca_ass_solution_tag dcca_ass_solution_tag_dcca_tags_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_solution_tag
+    ADD CONSTRAINT dcca_ass_solution_tag_dcca_tags_id_fk FOREIGN KEY (tag_id) REFERENCES public.dcca_tags(id);
+
+
+--
+-- Name: dcca_ass_user_device dcca_ass_user_device_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_user_device
+    ADD CONSTRAINT dcca_ass_user_device_dcca_users_id_fk FOREIGN KEY (user_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_ass_user_device dcca_ass_user_device_hosts_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_user_device
+    ADD CONSTRAINT dcca_ass_user_device_hosts_id_fk FOREIGN KEY (device_id) REFERENCES public.hosts(id);
+
+
+--
+-- Name: dcca_ass_user_role dcca_ass_user_role_dcca_roles_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_user_role
+    ADD CONSTRAINT dcca_ass_user_role_dcca_roles_id_fk FOREIGN KEY (role_id) REFERENCES public.dcca_roles(id);
+
+
+--
+-- Name: dcca_ass_user_role dcca_ass_user_role_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_user_role
+    ADD CONSTRAINT dcca_ass_user_role_dcca_users_id_fk FOREIGN KEY (user_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_ass_user_solution dcca_ass_user_solution_dcca_ass_solution_images_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_user_solution
+    ADD CONSTRAINT dcca_ass_user_solution_dcca_ass_solution_images_id_fk FOREIGN KEY (solution_id) REFERENCES public.dcca_ass_solution_images(id);
+
+
+--
+-- Name: dcca_ass_user_solution dcca_ass_user_solution_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_user_solution
+    ADD CONSTRAINT dcca_ass_user_solution_dcca_users_id_fk FOREIGN KEY (user_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_ass_user_task dcca_ass_user_task_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_user_task
+    ADD CONSTRAINT dcca_ass_user_task_dcca_users_id_fk FOREIGN KEY (user_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_ass_user_task dcca_ass_user_task_edgescale_tasks_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_user_task
+    ADD CONSTRAINT dcca_ass_user_task_edgescale_tasks_id_fk FOREIGN KEY (task_id) REFERENCES public.edgescale_tasks(id);
+
+
+--
+-- Name: dcca_ass_user_vendor dcca_ass_user_vendor_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_user_vendor
+    ADD CONSTRAINT dcca_ass_user_vendor_dcca_users_id_fk FOREIGN KEY (user_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_ass_user_vendor dcca_ass_user_vendor_dcca_vendors_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ass_user_vendor
+    ADD CONSTRAINT dcca_ass_user_vendor_dcca_vendors_id_fk FOREIGN KEY (vendor_id) REFERENCES public.dcca_vendors(id);
+
+
+--
+-- Name: dcca_audit dcca_audit_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_audit
+    ADD CONSTRAINT dcca_audit_dcca_users_id_fk FOREIGN KEY (user_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_common_services dcca_common_services_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_common_services
+    ADD CONSTRAINT dcca_common_services_dcca_users_id_fk FOREIGN KEY (user_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_customers dcca_customers_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_customers
+    ADD CONSTRAINT dcca_customers_dcca_users_id_fk FOREIGN KEY (owner_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_deploy_recoreds dcca_deploy_recoreds_edgescale_tasks_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_deploy_recoreds
+    ADD CONSTRAINT dcca_deploy_recoreds_edgescale_tasks_id_fk FOREIGN KEY (task_id) REFERENCES public.edgescale_tasks(id);
+
+
+--
+-- Name: dcca_deploy_recoreds dcca_deploy_recoreds_hosts_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_deploy_recoreds
+    ADD CONSTRAINT dcca_deploy_recoreds_hosts_id_fk FOREIGN KEY (device_id) REFERENCES public.hosts(id);
+
+
+--
+-- Name: dcca_device_groups dcca_device_groups_dcca_customers_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_device_groups
+    ADD CONSTRAINT dcca_device_groups_dcca_customers_id_fk FOREIGN KEY (customer_id) REFERENCES public.dcca_customers(id);
+
+
+--
+-- Name: dcca_device_groups dcca_device_groups_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_device_groups
+    ADD CONSTRAINT dcca_device_groups_dcca_users_id_fk FOREIGN KEY (owner_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_device_ip dcca_device_ip_hosts_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_device_ip
+    ADD CONSTRAINT dcca_device_ip_hosts_id_fk FOREIGN KEY (device_id) REFERENCES public.hosts(id);
+
+
+--
+-- Name: dcca_device_nics dcca_device_nics_hosts_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_device_nics
+    ADD CONSTRAINT dcca_device_nics_hosts_id_fk FOREIGN KEY (device_id) REFERENCES public.hosts(id);
+
+
+--
+-- Name: dcca_device_position dcca_device_position_dcca_continents_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_device_position
+    ADD CONSTRAINT dcca_device_position_dcca_continents_id_fk FOREIGN KEY (continent_id) REFERENCES public.dcca_continents(id);
+
+
+--
+-- Name: dcca_device_position dcca_device_position_dcca_locations_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_device_position
+    ADD CONSTRAINT dcca_device_position_dcca_locations_id_fk FOREIGN KEY (location_id) REFERENCES public.dcca_locations(id);
+
+
+--
+-- Name: dcca_models dcca_models_dcca_ass_solution_images_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_models
+    ADD CONSTRAINT dcca_models_dcca_ass_solution_images_id_fk FOREIGN KEY (default_solution_id) REFERENCES public.dcca_ass_solution_images(id);
+
+
+--
+-- Name: dcca_models dcca_models_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_models
+    ADD CONSTRAINT dcca_models_dcca_users_id_fk FOREIGN KEY (owner_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_notify_messages dcca_notify_messages_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_notify_messages
+    ADD CONSTRAINT dcca_notify_messages_dcca_users_id_fk FOREIGN KEY (owner_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_permissions dcca_permissions_dcca_resources_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_permissions
+    ADD CONSTRAINT dcca_permissions_dcca_resources_id_fk FOREIGN KEY (resource_id) REFERENCES public.dcca_resources(id);
+
+
+--
+-- Name: dcca_services dcca_services_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_services
+    ADD CONSTRAINT dcca_services_dcca_users_id_fk FOREIGN KEY (user_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_softapps dcca_softapps_dcca_app_mirror_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_softapps
+    ADD CONSTRAINT dcca_softapps_dcca_app_mirror_id_fk FOREIGN KEY (mirror_id) REFERENCES public.dcca_app_mirror(id);
+
+
+--
+-- Name: dcca_softapps dcca_softapps_dcca_applications_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_softapps
+    ADD CONSTRAINT dcca_softapps_dcca_applications_id_fk FOREIGN KEY (application_id) REFERENCES public.dcca_applications(id);
+
+
+--
+-- Name: dcca_certificates dcca_solu_certificates_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_certificates
+    ADD CONSTRAINT dcca_solu_certificates_dcca_users_id_fk FOREIGN KEY (user_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_solution_audit dcca_solution_audit_dcca_ass_solution_images_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_solution_audit
+    ADD CONSTRAINT dcca_solution_audit_dcca_ass_solution_images_id_fk FOREIGN KEY (solution_id) REFERENCES public.dcca_ass_solution_images(id);
+
+
+--
+-- Name: dcca_solution_audit dcca_solution_audit_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_solution_audit
+    ADD CONSTRAINT dcca_solution_audit_dcca_users_id_fk FOREIGN KEY (user_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_solution_sign dcca_solution_sign_dcca_ass_solution_images_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_solution_sign
+    ADD CONSTRAINT dcca_solution_sign_dcca_ass_solution_images_id_fk FOREIGN KEY (solution_id) REFERENCES public.dcca_ass_solution_images(id);
+
+
+--
+-- Name: dcca_task_template dcca_task_template_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_task_template
+    ADD CONSTRAINT dcca_task_template_dcca_users_id_fk FOREIGN KEY (owner_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_tasks dcca_tasks_dcca_ass_solution_images_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_tasks
+    ADD CONSTRAINT dcca_tasks_dcca_ass_solution_images_id_fk FOREIGN KEY (solution_id) REFERENCES public.dcca_ass_solution_images(id);
+
+
+--
+-- Name: dcca_tasks dcca_tasks_dcca_task_status_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_tasks
+    ADD CONSTRAINT dcca_tasks_dcca_task_status_id_fk FOREIGN KEY (status_id) REFERENCES public.dcca_task_status(id);
+
+
+--
+-- Name: dcca_tasks dcca_tasks_dcca_task_types_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_tasks
+    ADD CONSTRAINT dcca_tasks_dcca_task_types_id_fk FOREIGN KEY (type_id) REFERENCES public.dcca_task_types(id);
+
+
+--
+-- Name: dcca_tasks dcca_tasks_hosts_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_tasks
+    ADD CONSTRAINT dcca_tasks_hosts_id_fk FOREIGN KEY (device_id) REFERENCES public.hosts(id);
+
+
+--
+-- Name: dcca_tasks dcca_tasks_ota_status_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_tasks
+    ADD CONSTRAINT dcca_tasks_ota_status_id_fkey FOREIGN KEY (ota_status_id) REFERENCES public.dcca_ota_status(id);
+
+
+--
+-- Name: dcca_ai_engines dcca_training_engins_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_ai_engines
+    ADD CONSTRAINT dcca_training_engins_dcca_users_id_fk FOREIGN KEY (owner_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_user_limits dcca_user_limits_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_user_limits
+    ADD CONSTRAINT dcca_user_limits_dcca_users_id_fk FOREIGN KEY (user_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_users dcca_users_dcca_account_types_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_users
+    ADD CONSTRAINT dcca_users_dcca_account_types_id_fk FOREIGN KEY (account_type_id) REFERENCES public.dcca_account_types(id);
+
+
+--
+-- Name: es_task_device_inst es_task_device_inst_es_tasks_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.es_task_device_inst
+    ADD CONSTRAINT es_task_device_inst_es_tasks_id_fk FOREIGN KEY (task_id) REFERENCES public.es_tasks(id);
+
+
+--
+-- Name: es_task_device_inst es_task_device_inst_hosts_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.es_task_device_inst
+    ADD CONSTRAINT es_task_device_inst_hosts_id_fk FOREIGN KEY (device_id) REFERENCES public.hosts(id);
+
+
+--
+-- Name: es_task_da_inst es_task_inst_dcca_softapps_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.es_task_da_inst
+    ADD CONSTRAINT es_task_inst_dcca_softapps_id_fk FOREIGN KEY (softapp_id) REFERENCES public.dcca_softapps(id);
+
+
+--
+-- Name: es_task_da_inst es_task_inst_es_tasks_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.es_task_da_inst
+    ADD CONSTRAINT es_task_inst_es_tasks_id_fk FOREIGN KEY (task_id) REFERENCES public.es_tasks(id);
+
+
+--
+-- Name: es_task_da_inst es_task_inst_hosts_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.es_task_da_inst
+    ADD CONSTRAINT es_task_inst_hosts_id_fk FOREIGN KEY (device_id) REFERENCES public.hosts(id);
+
+
+--
+-- Name: es_task_ota_inst es_task_ota_inst_dcca_ass_solution_images_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.es_task_ota_inst
+    ADD CONSTRAINT es_task_ota_inst_dcca_ass_solution_images_id_fk FOREIGN KEY (solution_id) REFERENCES public.dcca_ass_solution_images(id);
+
+
+--
+-- Name: es_task_ota_inst es_task_ota_inst_es_tasks_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.es_task_ota_inst
+    ADD CONSTRAINT es_task_ota_inst_es_tasks_id_fk FOREIGN KEY (task_id) REFERENCES public.es_tasks(id);
+
+
+--
+-- Name: es_task_ota_inst es_task_ota_inst_hosts_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.es_task_ota_inst
+    ADD CONSTRAINT es_task_ota_inst_hosts_id_fk FOREIGN KEY (device_id) REFERENCES public.hosts(id);
+
+
+--
+-- Name: es_tasks es_tasks_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.es_tasks
+    ADD CONSTRAINT es_tasks_dcca_users_id_fk FOREIGN KEY (owner_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: hosts hosts_dcca_ass_solution_images_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.hosts
+    ADD CONSTRAINT hosts_dcca_ass_solution_images_id_fk FOREIGN KEY (solution_id) REFERENCES public.dcca_ass_solution_images(id);
+
+
+--
+-- Name: hosts hosts_dcca_models_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.hosts
+    ADD CONSTRAINT hosts_dcca_models_id_fk FOREIGN KEY (dcca_model_id) REFERENCES public.dcca_models(id);
+
+
+--
+-- Name: hosts hosts_dcca_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.hosts
+    ADD CONSTRAINT hosts_dcca_users_id_fk FOREIGN KEY (owner_id) REFERENCES public.dcca_users(id);
+
+
+--
+-- Name: dcca_softwares softwares_sw_versions_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: root
+--
+
+ALTER TABLE ONLY public.dcca_softwares
+    ADD CONSTRAINT softwares_sw_versions_id_fk FOREIGN KEY (version_id) REFERENCES public.dcca_sw_versions(id);
+
+
+--
+-- Name: SCHEMA public; Type: ACL; Schema: -; Owner: postgres
+--
+
+REVOKE ALL ON SCHEMA public FROM postgres;
+GRANT ALL ON SCHEMA public TO root;
+
+
+--
+-- PostgreSQL database dump complete
+--
+

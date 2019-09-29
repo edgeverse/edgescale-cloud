@@ -1,0 +1,33 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: openfaas-util
+    component: task-schedular
+  name: task-schedular
+  namespace: "openfaas-util"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: task-schedular
+    spec:
+      containers:
+      - name:  task-schedular
+        image: pcloud.edgescale.org/pcloud/task_schedular
+        imagePullPolicy: Always
+        env:
+        - name: DB_HOST
+          value: postgres-external.openfaas-util
+        - name: DB_PASSWORD
+          value: edgescale
+        - name: DB_USER
+          value: root
+        - name: DB_PORT
+          value: "5432"
+        - name: DATABASE
+          value: edgescale
+      imagePullSecrets:
+        - name: kube-repos

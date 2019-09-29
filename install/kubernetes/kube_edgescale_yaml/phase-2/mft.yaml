@@ -1,0 +1,22 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: openfaas-util
+    component: mft
+  name: mft
+  namespace: "openfaas-util"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mft
+    spec:
+      containers:
+      - name:  mft
+        image: pcloud.edgescale.org/pcloud/mft
+        imagePullPolicy: Always
+      imagePullSecrets:
+        - name: kube-repos

@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: openfaas-util
+    component: e-est
+  name: e-est-external
+  namespace: "openfaas-util"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 10443
+      protocol: TCP
+      targetPort: 443
+  selector:
+    app: e-est
+

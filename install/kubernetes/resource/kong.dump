@@ -1,0 +1,828 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 11.5 (Debian 11.5-1.pgdg90+1)
+-- Dumped by pg_dump version 11.5 (Debian 11.5-1.pgdg90+1)
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: delete_expired_cluster_events(); Type: FUNCTION; Schema: public; Owner: kong
+--
+
+CREATE FUNCTION public.delete_expired_cluster_events() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+      BEGIN
+          DELETE FROM cluster_events WHERE expire_at <= NOW();
+          RETURN NEW;
+      END;
+      $$;
+
+
+ALTER FUNCTION public.delete_expired_cluster_events() OWNER TO kong;
+
+--
+-- Name: upsert_schema_migrations(text, character varying); Type: FUNCTION; Schema: public; Owner: kong
+--
+
+CREATE FUNCTION public.upsert_schema_migrations(identifier text, migration_name character varying) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+      DECLARE
+      BEGIN
+          UPDATE schema_migrations SET migrations = array_append(migrations, migration_name) WHERE id = identifier;
+          IF NOT FOUND THEN
+          INSERT INTO schema_migrations(id, migrations) VALUES(identifier, ARRAY[migration_name]);
+          END IF;
+      END;
+      $$;
+
+
+ALTER FUNCTION public.upsert_schema_migrations(identifier text, migration_name character varying) OWNER TO kong;
+
+--
+-- Name: upsert_ttl(text, uuid, text, text, timestamp without time zone); Type: FUNCTION; Schema: public; Owner: kong
+--
+
+CREATE FUNCTION public.upsert_ttl(v_primary_key_value text, v_primary_uuid_value uuid, v_primary_key_name text, v_table_name text, v_expire_at timestamp without time zone) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+      BEGIN
+        LOOP
+          UPDATE ttls SET expire_at = v_expire_at WHERE primary_key_value = v_primary_key_value AND table_name = v_table_name;
+          IF found then
+            RETURN;
+          END IF;
+          BEGIN
+            INSERT INTO ttls(primary_key_value, primary_uuid_value, primary_key_name, table_name, expire_at) VALUES(v_primary_key_value, v_primary_uuid_value, v_primary_key_name, v_table_name, v_expire_at);
+            RETURN;
+          EXCEPTION WHEN unique_violation THEN
+            -- Do nothing, and loop to try the UPDATE again.
+          END;
+        END LOOP;
+      END;
+      $$;
+
+
+ALTER FUNCTION public.upsert_ttl(v_primary_key_value text, v_primary_uuid_value uuid, v_primary_key_name text, v_table_name text, v_expire_at timestamp without time zone) OWNER TO kong;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: apis; Type: TABLE; Schema: public; Owner: kong
+--
+
+CREATE TABLE public.apis (
+    id uuid NOT NULL,
+    name text,
+    upstream_url text,
+    preserve_host boolean NOT NULL,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP(3),
+    retries smallint DEFAULT 5,
+    https_only boolean,
+    http_if_terminated boolean,
+    hosts text,
+    uris text,
+    methods text,
+    strip_uri boolean,
+    upstream_connect_timeout integer,
+    upstream_send_timeout integer,
+    upstream_read_timeout integer
+);
+
+
+ALTER TABLE public.apis OWNER TO kong;
+
+--
+-- Name: certificates; Type: TABLE; Schema: public; Owner: kong
+--
+
+CREATE TABLE public.certificates (
+    id uuid NOT NULL,
+    cert text,
+    key text,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, CURRENT_TIMESTAMP(0))
+);
+
+
+ALTER TABLE public.certificates OWNER TO kong;
+
+--
+-- Name: cluster_events; Type: TABLE; Schema: public; Owner: kong
+--
+
+CREATE TABLE public.cluster_events (
+    id uuid NOT NULL,
+    node_id uuid NOT NULL,
+    at timestamp with time zone NOT NULL,
+    nbf timestamp with time zone,
+    expire_at timestamp with time zone NOT NULL,
+    channel text,
+    data text
+);
+
+
+ALTER TABLE public.cluster_events OWNER TO kong;
+
+--
+-- Name: consumers; Type: TABLE; Schema: public; Owner: kong
+--
+
+CREATE TABLE public.consumers (
+    id uuid NOT NULL,
+    custom_id text,
+    username text,
+    created_at timestamp without time zone DEFAULT timezone('utc'::text, CURRENT_TIMESTAMP(0))
+);
+
+
+ALTER TABLE public.consumers OWNER TO kong;
+
+--
+-- Name: plugins; Type: TABLE; Schema: public; Owner: kong
+--
+
+CREATE TABLE public.plugins (
+    id uuid NOT NULL,
+    name text NOT NULL,
+    api_id uuid,
+    consumer_id uuid,
+    config json NOT NULL,
+    enabled boolean NOT NULL,
+    created_at timestamp without time zone DEFAULT timezone('utc'::text, CURRENT_TIMESTAMP(0)),
+    route_id uuid,
+    service_id uuid
+);
+
+
+ALTER TABLE public.plugins OWNER TO kong;
+
+--
+-- Name: routes; Type: TABLE; Schema: public; Owner: kong
+--
+
+CREATE TABLE public.routes (
+    id uuid NOT NULL,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    protocols text[],
+    methods text[],
+    hosts text[],
+    paths text[],
+    regex_priority bigint,
+    strip_path boolean,
+    preserve_host boolean,
+    service_id uuid
+);
+
+
+ALTER TABLE public.routes OWNER TO kong;
+
+--
+-- Name: schema_migrations; Type: TABLE; Schema: public; Owner: kong
+--
+
+CREATE TABLE public.schema_migrations (
+    id text NOT NULL,
+    migrations character varying(100)[]
+);
+
+
+ALTER TABLE public.schema_migrations OWNER TO kong;
+
+--
+-- Name: services; Type: TABLE; Schema: public; Owner: kong
+--
+
+CREATE TABLE public.services (
+    id uuid NOT NULL,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    name text,
+    retries bigint,
+    protocol text,
+    host text,
+    port bigint,
+    path text,
+    connect_timeout bigint,
+    write_timeout bigint,
+    read_timeout bigint
+);
+
+
+ALTER TABLE public.services OWNER TO kong;
+
+--
+-- Name: snis; Type: TABLE; Schema: public; Owner: kong
+--
+
+CREATE TABLE public.snis (
+    name text NOT NULL,
+    certificate_id uuid,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, CURRENT_TIMESTAMP(0)),
+    id uuid NOT NULL
+);
+
+
+ALTER TABLE public.snis OWNER TO kong;
+
+--
+-- Name: targets; Type: TABLE; Schema: public; Owner: kong
+--
+
+CREATE TABLE public.targets (
+    id uuid NOT NULL,
+    target text NOT NULL,
+    weight integer NOT NULL,
+    upstream_id uuid,
+    created_at timestamp without time zone DEFAULT timezone('utc'::text, CURRENT_TIMESTAMP(3))
+);
+
+
+ALTER TABLE public.targets OWNER TO kong;
+
+--
+-- Name: ttls; Type: TABLE; Schema: public; Owner: kong
+--
+
+CREATE TABLE public.ttls (
+    primary_key_value text NOT NULL,
+    primary_uuid_value uuid,
+    table_name text NOT NULL,
+    primary_key_name text NOT NULL,
+    expire_at timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public.ttls OWNER TO kong;
+
+--
+-- Name: upstreams; Type: TABLE; Schema: public; Owner: kong
+--
+
+CREATE TABLE public.upstreams (
+    id uuid NOT NULL,
+    name text,
+    slots integer NOT NULL,
+    created_at timestamp without time zone DEFAULT timezone('utc'::text, CURRENT_TIMESTAMP(3)),
+    healthchecks json,
+    hash_on text,
+    hash_fallback text,
+    hash_on_header text,
+    hash_fallback_header text,
+    hash_on_cookie text,
+    hash_on_cookie_path text
+);
+
+
+ALTER TABLE public.upstreams OWNER TO kong;
+
+--
+-- Data for Name: apis; Type: TABLE DATA; Schema: public; Owner: kong
+--
+
+COPY public.apis (id, name, upstream_url, preserve_host, created_at, retries, https_only, http_if_terminated, hosts, uris, methods, strip_uri, upstream_connect_timeout, upstream_send_timeout, upstream_read_timeout) FROM stdin;
+\.
+
+
+--
+-- Data for Name: certificates; Type: TABLE DATA; Schema: public; Owner: kong
+--
+
+COPY public.certificates (id, cert, key, created_at) FROM stdin;
+21b69eab-09d9-40f9-a55e-c4ee47fada68	-----BEGIN CERTIFICATE-----\nMIIFVTCCBD2gAwIBAgISAz6WI9MkiOJLZFroJNebi4SZMA0GCSqGSIb3DQEBCwUA\nMEoxCzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1MZXQncyBFbmNyeXB0MSMwIQYDVQQD\nExpMZXQncyBFbmNyeXB0IEF1dGhvcml0eSBYMzAeFw0xOTA3MTYwNjE5NTZaFw0x\nOTEwMTQwNjE5NTZaMBoxGDAWBgNVBAMMDyouZWRnZXNjYWxlLm9yZzCCASIwDQYJ\nKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMIh1zJGbUP0GeWQVz8I3m/krdIpyMeA\nFTjv66UCk0avKDGNDlUBhd8emY8xOOQMGIQZpJKrRZRwB2syNdQvD8jnjKCO9UBZ\nlVR38aqm4lMqxjllfUi3CjSDw53CHAnUnujcwXq/XaJH5F6FcczPeluLYb7NUWRa\nQRm4Wn68+fbGtj7JOPMpCIXIFs3P41EKEQyy2pHF3r8PBQI+05yakbg7Uq/EiAYE\nL5ynwlEZZ9SHfixEODDNzQh75mhC4XxtKMvi+jRk8OePy7bLDqFSdGaT4WlBwqct\nDcLFdfdp5jWpnspsPPLmAgFcro9iTMFR+O82cWvoEgb0J35cMdd/5dkCAwEAAaOC\nAmMwggJfMA4GA1UdDwEB/wQEAwIFoDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYB\nBQUHAwIwDAYDVR0TAQH/BAIwADAdBgNVHQ4EFgQUtj9RfB7RVmWeEiExBJVKvXGK\nKk4wHwYDVR0jBBgwFoAUqEpqYwR93brm0Tm3pkVl7/Oo7KEwbwYIKwYBBQUHAQEE\nYzBhMC4GCCsGAQUFBzABhiJodHRwOi8vb2NzcC5pbnQteDMubGV0c2VuY3J5cHQu\nb3JnMC8GCCsGAQUFBzAChiNodHRwOi8vY2VydC5pbnQteDMubGV0c2VuY3J5cHQu\nb3JnLzAaBgNVHREEEzARgg8qLmVkZ2VzY2FsZS5vcmcwTAYDVR0gBEUwQzAIBgZn\ngQwBAgEwNwYLKwYBBAGC3xMBAQEwKDAmBggrBgEFBQcCARYaaHR0cDovL2Nwcy5s\nZXRzZW5jcnlwdC5vcmcwggEDBgorBgEEAdZ5AgQCBIH0BIHxAO8AdQB0ftqDMa0z\nEJEhnM4lT0Jwwr/9XkIgCMY3NXnmEHvMVgAAAWv5pvJTAAAEAwBGMEQCIDo7Qipp\nXOggPF+GXkjHoEFqRuSgUrsoXYFdR4WO5RB5AiAsLI7fZ2G7RFZhCHbuZ92nG/gj\nySFRuDxMHWF0tL/RMwB2AGPy283oO8wszwtyhCdXazOkjWF3j711pjixx2hUS9iN\nAAABa/mm9DUAAAQDAEcwRQIhAK9FCkR+99ReB+4ep5DdQU9UUA4U8lQoUmu3+2hP\npwOoAiBvQpbiu5c+iN4ns4zQY4O1XPXIIpX2XR+fe9hw1xLn3jANBgkqhkiG9w0B\nAQsFAAOCAQEAApsbk9Mw1nEANJUA03gUbdOBIDkOc8hh8Lp05CJIxt3RWmkaKx/n\nxrIZQLXo2VWOeFiZ17yxI6fCLvgF0TPsYyMBCxbldMQm3NW6H8zGZdwbqZ0C6v9w\nRRAZZXRQEGll132FzDoTicHYbmAtpA+ZLL7/U9NifRTelQd+UkBf68y8iViQIdzK\nnaxeK4UnNYgiBaeBUX/ntQe9ELCmfJa7zAdBTDPufE40Agwt2KUdRQynHPfXRC4n\nfO6kYgFYuMU/KZmUINRoRehc5z1EqxdMVw8hhCbCFf9Z9kt7xMxpQnuoA36uSN6o\nQvskc8+is+YtfGLUTWcUgKY5vzqr2ARjUA==\n-----END CERTIFICATE-----\n\n-----BEGIN CERTIFICATE-----\nMIIEkjCCA3qgAwIBAgIQCgFBQgAAAVOFc2oLheynCDANBgkqhkiG9w0BAQsFADA/\nMSQwIgYDVQQKExtEaWdpdGFsIFNpZ25hdHVyZSBUcnVzdCBDby4xFzAVBgNVBAMT\nDkRTVCBSb290IENBIFgzMB4XDTE2MDMxNzE2NDA0NloXDTIxMDMxNzE2NDA0Nlow\nSjELMAkGA1UEBhMCVVMxFjAUBgNVBAoTDUxldCdzIEVuY3J5cHQxIzAhBgNVBAMT\nGkxldCdzIEVuY3J5cHQgQXV0aG9yaXR5IFgzMIIBIjANBgkqhkiG9w0BAQEFAAOC\nAQ8AMIIBCgKCAQEAnNMM8FrlLke3cl03g7NoYzDq1zUmGSXhvb418XCSL7e4S0EF\nq6meNQhY7LEqxGiHC6PjdeTm86dicbp5gWAf15Gan/PQeGdxyGkOlZHP/uaZ6WA8\nSMx+yk13EiSdRxta67nsHjcAHJyse6cF6s5K671B5TaYucv9bTyWaN8jKkKQDIZ0\nZ8h/pZq4UmEUEz9l6YKHy9v6Dlb2honzhT+Xhq+w3Brvaw2VFn3EK6BlspkENnWA\na6xK8xuQSXgvopZPKiAlKQTGdMDQMc2PMTiVFrqoM7hD8bEfwzB/onkxEz0tNvjj\n/PIzark5McWvxI0NHWQWM6r6hCm21AvA2H3DkwIDAQABo4IBfTCCAXkwEgYDVR0T\nAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAYYwfwYIKwYBBQUHAQEEczBxMDIG\nCCsGAQUFBzABhiZodHRwOi8vaXNyZy50cnVzdGlkLm9jc3AuaWRlbnRydXN0LmNv\nbTA7BggrBgEFBQcwAoYvaHR0cDovL2FwcHMuaWRlbnRydXN0LmNvbS9yb290cy9k\nc3Ryb290Y2F4My5wN2MwHwYDVR0jBBgwFoAUxKexpHsscfrb4UuQdf/EFWCFiRAw\nVAYDVR0gBE0wSzAIBgZngQwBAgEwPwYLKwYBBAGC3xMBAQEwMDAuBggrBgEFBQcC\nARYiaHR0cDovL2Nwcy5yb290LXgxLmxldHNlbmNyeXB0Lm9yZzA8BgNVHR8ENTAz\nMDGgL6AthitodHRwOi8vY3JsLmlkZW50cnVzdC5jb20vRFNUUk9PVENBWDNDUkwu\nY3JsMB0GA1UdDgQWBBSoSmpjBH3duubRObemRWXv86jsoTANBgkqhkiG9w0BAQsF\nAAOCAQEA3TPXEfNjWDjdGBX7CVW+dla5cEilaUcne8IkCJLxWh9KEik3JHRRHGJo\nuM2VcGfl96S8TihRzZvoroed6ti6WqEBmtzw3Wodatg+VyOeph4EYpr/1wXKtx8/\nwApIvJSwtmVi4MFU5aMqrSDE6ea73Mj2tcMyo5jMd6jmeWUHK8so/joWUoHOUgwu\nX4Po1QYz+3dszkDqMp4fklxBwXRsW10KXzPMTZ+sOPAveyxindmjkW8lGy+QsRlG\nPfZ+G6Z6h7mjem0Y+iWlkYcV4PIWL1iwBi8saCbGS5jN2p8M+X+Q7UNKEkROb3N6\nKOqkqm57TH2H3eDJAkSnh6/DNFu0Qg==\n-----END CERTIFICATE-----\n	-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEAwiHXMkZtQ/QZ5ZBXPwjeb+St0inIx4AVOO/rpQKTRq8oMY0O\nVQGF3x6ZjzE45AwYhBmkkqtFlHAHazI11C8PyOeMoI71QFmVVHfxqqbiUyrGOWV9\nSLcKNIPDncIcCdSe6NzBer9dokfkXoVxzM96W4thvs1RZFpBGbhafrz59sa2Psk4\n8ykIhcgWzc/jUQoRDLLakcXevw8FAj7TnJqRuDtSr8SIBgQvnKfCURln1Id+LEQ4\nMM3NCHvmaELhfG0oy+L6NGTw54/LtssOoVJ0ZpPhaUHCpy0NwsV192nmNameymw8\n8uYCAVyuj2JMwVH47zZxa+gSBvQnflwx13/l2QIDAQABAoIBACcdlHOv1xJLG/Cy\nbbHowpD/Hbrr6mWwPBZ12SAtbalfX5TkXA/qt6OmUcCVZWYlvcbYN93JnsJy9Du4\nKTpwpRiQ9zfetjHaGwmjBVGiQJYLV1d3SJAfOXItXnvqAaZFbiNzX5Sw/FfXbn9R\nGgXvhDLv2akNS6oRuW5KRAmnYCJFu6uzkeOwjuB7kqULgV32lV6p9u0J7XlhRFz1\n1HF9q4objQBskPg5O7uF778P1tbDnBOh9eCAj54UIa+SXv2+dy34zQjQTTxi6PYM\nQd9WEcYgry3iBTk2jZQvz/jqQeMDEoFcsOBsayipEpxy1EeAE0//8a5v5wPr5ymy\nuscgcoECgYEA7ZucWQlFnUNDrIgK1D1Md08OCN4cFD1Ce3+JXLP/+DQGCdXUYw7V\nhCzmqg4T4SsKNlSWIWGsEmtXNP2dm0weAFil/eEJUMgAghvMHj8bT/JGV/eL5fSx\nXJ/IUgHPZS/xuZtKcSoNDkG6ZYGIHAQC2tGojZO9A2mHii6jD6gjbZECgYEA0Si5\nkjUFqgNxpXySoFnm1FKBy6czVDkzgRydg6OurwBH1d6yN0o7BRDEMP/HC4G4AXbm\nw///MvkKaMzWbXus6b7Tsml4tFSFZMRS52VqUiUKpa3w0I6BiAXS5Nx+Udl6mqxJ\nv0cqMKjjkvwHCW+8hROBzIjJxDF2P3zvT1Hdb8kCgYAT9ljiWhcRKU+MNTnDrwq3\nk1q4gACX6rWlLofZ0/2TWruPI/neAKcLncIbU2d0KWuIOP8L+uq7+WywNQaCv5hd\nqxT3CWsA8Gyqga9acy7WPqKOTWvhe/dSstHfoetMswR59YQBkeja48bHNGS9BdE/\nlRG2I01j9f+/Kj/k1tlzIQKBgQCCBgQenPGReCSdEK0CHAFAOq5PkPh6wjh/ae+N\nlyKPzefaT1+QuYepJXwhTdBKGfDukCDy9WCLKoBLGBOw6fJbOPLXdXPA/s4SD23O\nRaBrwnU0+8W5kO17RsuM1Hl+nmj2YGZUD4RtzX/zrtMdDaYvQCovoVV0rp7o5tzJ\n/YVf6QKBgF6Eb6WQtdSM6J89xNGruRcuBHyvFhV7YbLfsgjmHbf+h+F9C4twL4zI\n7AE9cu7jBACpPo57rilm1XUK/arxGxW2jQoDUgY0cE0HgIxmv1Da+kflm+PWPSp+\nhCMZViap7gCZ/u++lB9UcFLTuZn769Pcs3Jt921++IXOJaY/grLD\n-----END RSA PRIVATE KEY-----\n	2019-09-03 11:15:42.897+00
+\.
+
+
+--
+-- Data for Name: cluster_events; Type: TABLE DATA; Schema: public; Owner: kong
+--
+
+COPY public.cluster_events (id, node_id, at, nbf, expire_at, channel, data) FROM stdin;
+50b0b19d-e284-4c4e-a2f6-1be878206693	ca0a1a5a-75f2-4210-a9be-dd159d32cb39	2019-06-11 09:00:50.188+00	\N	2019-06-11 10:00:50.188+00	invalidations	router:version
+\.
+
+
+--
+-- Data for Name: consumers; Type: TABLE DATA; Schema: public; Owner: kong
+--
+
+COPY public.consumers (id, custom_id, username, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: plugins; Type: TABLE DATA; Schema: public; Owner: kong
+--
+
+COPY public.plugins (id, name, api_id, consumer_id, config, enabled, created_at, route_id, service_id) FROM stdin;
+6930a87a-57e0-4832-8312-4e627a75cc0e	openfaas	\N	\N	{"https_verify":false,"timeout":90000,"hosts":"http:\\/\\/10.192.208.195:8080\\/function","keepalive":90000,"https":true,"result":true}	t	2018-11-08 02:25:58	\N	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+\.
+
+
+--
+-- Data for Name: routes; Type: TABLE DATA; Schema: public; Owner: kong
+--
+
+COPY public.routes (id, created_at, updated_at, protocols, methods, hosts, paths, regex_priority, strip_path, preserve_host, service_id) FROM stdin;
+e0a4811a-42b6-4d98-94b7-578a98cb4d8d	2018-11-08 02:31:39+00	2018-11-08 02:31:39+00	{http,https}	\N	\N	{/v1/enroll}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+23b40d7b-f472-411e-8936-6b3463e5636e	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/est/device}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+8eb02c63-5839-477c-8730-68c2f477eace	2018-11-08 02:31:39+00	2018-11-08 02:31:39+00	{http,https}	\N	\N	{/v1/deployment}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+e5e1aa29-5100-4179-b4d3-e036e02501be	2018-11-08 02:31:39+00	2018-11-08 02:31:39+00	{http,https}	\N	\N	{/v1/enroll/token}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+58b504e3-27b1-4348-b7b3-4f27a30e2770	2018-11-08 02:31:39+00	2018-11-08 02:31:39+00	{http,https}	\N	\N	{/v1/vendors}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+e851d74c-f9d7-4de0-8545-8d28416cfc63	2018-11-08 02:31:39+00	2018-11-08 02:31:39+00	{http,https}	\N	\N	{/v1/deployment/applications/params}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+9c3c9ad4-05b0-4589-9036-138621f64b20	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/devices/positions/statistics}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+32d7d400-bdfb-4ef7-8fa8-43a9fb36422a	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/enroll/device}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+30be401d-d276-40b6-af1b-ba185f3aabb3	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/devices/filter}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+b8b3f463-9d62-4738-b066-cef1c8f51297	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/api/usage/da}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+6848ccb7-8f7d-46cb-8ab8-93e1bd55713e	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/users/password}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+ce50defa-236c-4dea-b9ab-983a7f05f71e	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/services/common}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+aac64b59-f91c-45bd-848b-f7095dbb7a3f	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/applications/(?<id>.*)/documents/temp}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+43050d5c-54c3-4f6e-aea3-1ade4b7e2197	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/solutions/(?<id>.*)/certificate}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+662b4375-1c86-4007-9434-d62d9308e62e	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/applications/(?<id>.*)}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+1a372a60-5771-45d8-8d56-7f8405602673	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/users/timezones}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+48ef5c70-7f8d-4aac-ae3b-f0619499983d	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/users/(?<id>.*)}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+9dcfcb70-9eb4-40d9-aff6-4231066c3fc2	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/permissions}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+5903ef6d-9e28-40f3-b766-5c4fd50d9ea9	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/services/(?<id>.*)/common}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+11bdccca-a078-42bd-801a-10a4e12a792e	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/vendors/(?<id>.*)}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+3ecc25d6-cc75-4b6f-b08c-b24f00d65f23	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/users/verify}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+6e6010f4-bcc5-430a-bf7f-34e523a14ab6	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/api/usage}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+6848d9bf-9a53-411c-a1d4-6af614f15895	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/builder/repositories}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+f001cba5-a8d6-4260-ba32-646636e7ac24	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/info/application}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+e01fac83-ff99-4b32-a3e9-9748a215c9b7	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/info/solution}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+97663b8d-7489-475a-a93c-19ccd40ec53e	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/info}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+c250c735-4b34-4d0c-ae86-a1792f7cb84f	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/deployment/applications}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+5eee2e09-afd8-4a05-82e3-a255034b7db5	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/devices/(?<id>.*)/tasks}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+5683086e-9435-4843-8203-3e8646f803cc	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/est}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+8ae0944a-b666-4a1c-8dbf-010b02f814ba	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/info/model}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+c9bfb9c2-7aad-4307-a98c-3709589b704b	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/users}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+52b2c375-7888-4865-aa1c-88b8887b7073	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/tasks/(?<id>.*)}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+dd21b923-5682-449d-85ff-ca542e514e2c	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/info/position}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+60d4bcb3-a085-4778-b624-194bedbb1bda	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/devices/positions}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+460038b4-c8cd-4187-9e77-80be7e6790cf	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/accounts/types}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+bb638d4c-164e-48e1-b925-44dfe249674f	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/registry}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+2369b249-8111-402d-a2ef-359dde422f4e	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/enroll/device/(?<id>.*)}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+0fe04458-c06b-4269-96a0-6487878dac91	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/devices/locations}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+3c0cd53d-389f-476c-92ee-e8e5e1c0e7c5	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/models/(?<id>.*)}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+ac3a2d37-9162-45c0-a0e9-06202920b273	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/tasks/devices}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+b1589ebc-cbcd-4da5-a97f-b15abd52478c	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/solutions/images}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+7d6b3029-5689-4591-9a67-e1aed10d0626	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/applications}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+8f1c059b-6d37-471d-bf4e-f92931ba4056	2018-11-08 02:31:39+00	2018-11-08 02:31:39+00	{http,https}	\N	\N	{/v1/roles}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+4501bdbb-02ce-48fc-a579-c83f00b15442	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/services}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+7a6afcb0-bf3e-4976-953a-a8e2ae52c88e	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/accounts}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+27d501d9-6c4c-40f1-b9cd-79a71eb38244	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/applications/mirrors}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+ebf2f449-9894-491c-a21a-2c1d54899a2f	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/devices/unenrollment}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+cb65c53b-a121-40ef-b039-7d12ba1a18b8	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/solutions/(?<id>.*)}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+e1ba44d1-91d2-492c-a180-e72254c31a11	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/devices/(?<id>.*)/applications}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+4baf2c56-f412-40ca-ad34-d1d537188a21	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/enroll/challenge}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+96b27a8d-3c74-4ae3-86e9-5f4cd9c39365	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/devices/softwares}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+e7af62d0-a7af-44ce-be7a-46a077bc2b51	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/devices/filter/attributes}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+de9bc718-33ff-49de-ac31-c6033e05ea20	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/users/password/reset}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+55e74a10-e8e6-451f-b265-12026095c989	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/devices/certificates}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+f9bd8b01-4072-4b1e-b506-783ff1390b5e	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/devices/(?<id>.*)/node}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+463e0c3e-f73e-49da-80be-ed6acdec2089	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/applications/(?<id>.*)/images}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+99fdbfe2-84d7-4dd1-8daf-24f4fcd4e54e	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/devices/tags}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+cddd918e-74b5-480e-ba1c-1f0ffa2264ac	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/solutions/images/names}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+7e7fc037-9a26-4590-9e98-38638de1e0b3	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/applications/(?<id>.*)/versions}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+ccced7cd-191d-4072-bf39-43c9e8a016b6	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/devices}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+5c77fd82-ac0a-4c63-8c63-9adf4d97c0e2	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/tasks}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+bb2e005d-5a9e-48c2-83f9-a05d8b0cf678	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/users/self}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+d8763aa5-35d9-4293-9372-94f58373f418	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/solutions/tags}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+8f33130c-70c3-401c-8381-5ddeecea5b66	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/models}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+a09db8b2-6d0e-42ef-9b2d-dbdb528c8ab5	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/applications/filter}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+1b87875f-8bc7-4e6d-a71a-e3bf4b7ac136	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/devices/(?<id>.*)}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+bd21fa2c-2205-445d-87e9-0a48c8d2bdc1	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/accounts/(?<id>.*)}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+636d66a7-053d-4123-9095-006f17388d2c	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/devices/type}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+c7f4557e-3237-4604-8586-104b9ba79014	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/applications/requests}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+3bab84b3-6ae2-471a-8d0e-506688964773	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/services/(?<id>.*)}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+7997b0b4-a126-4819-bc64-39ab3a5a8047	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/registry/(?<id>.*)}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+851475ee-bafe-4a83-98f7-277efdbe0ffe	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/applications/store}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+95c98fd9-dee3-477d-b769-4e36f3510c1a	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/devices/filter/attributes/name}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+b52d2e88-5372-4e0f-9852-33d7bb40621e	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/users/limits}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+5ba53f20-f0a2-4b3a-b7f2-8de452cbb7ec	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/solutions/names}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+dd3a0282-6509-442f-be6c-b6dd6f64e173	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/applications/requests/(?<id>.*)}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+ab621488-dd2c-4edd-8d89-37e2bab172c5	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/solutions}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+c3186253-65ae-447b-acee-f7db5b70e163	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/api/usage/cd}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+b659b5db-baa3-405f-a71a-5cc68bce2617	2018-11-08 02:31:41+00	2018-12-18 06:26:03+00	{http,https}	\N	{}	{/v1/applications/(?<id>.*)/images/(?<image_id>.*)}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+80d0e488-e4e9-463a-b493-62292b807da5	2018-11-08 02:31:41+00	2019-05-29 10:30:12+00	{http,https}	\N	{}	{/v1/models/(?<id>.*)/services}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+02957df2-47d1-4684-8f9d-6dcfad5d044e	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/applications/tags}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+83d362fd-8d16-404d-b995-91072142a9f4	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/builder/environments}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+208b59c8-76de-4f69-bc54-6c433afca3ac	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/applications/(?<id>.*)/tags}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+a9fd49d0-1d60-40f4-8d5a-969a55b23480	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/solutions/images/versions}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+d5ed7c49-dfb9-44fe-9bd5-cef914366a07	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/applications/(?<id>.*)/store}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+c304dcec-0cbc-4063-98c7-a897eec5c12f	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/devices/tasks}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+41baf653-bcdf-47d5-9674-762ce4d91678	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/info/device}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+c243a69e-02ed-4231-8fce-9247c998917a	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/accounts/(?<id>.*)/manage}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+32e0fc4a-744c-44c3-a683-61467896e8b3	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/users/certificate}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+9593af33-e01c-40c9-844c-1c20a3a983e5	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/devices/tasks/status}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+48a740c5-aa5c-4521-b33c-e5b880b9db4e	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/applications/(?<id>.*)/documents}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+5b1f0c36-5f07-45f0-aaf2-7dcac4255b8c	2018-11-08 02:31:41+00	2018-11-08 02:31:41+00	{http,https}	\N	\N	{/v1/users/limits/types}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+a7ca6b05-fafa-4fa1-9d68-6190460bc191	2018-12-06 06:02:55+00	2018-12-06 06:05:06+00	{http,https}	{GET}	{}	{/v1/devices/(?<id>.*)/endpoints}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+17dfca5c-b6f9-4c5c-875a-e0407ac12ba4	2019-01-25 02:31:02+00	2019-01-25 02:31:02+00	{http,https}	\N	{}	{/v1/devices/logs/signer}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+fe862b34-4b0a-46e2-91ac-4980359b2322	2018-11-08 02:31:41+00	2019-03-21 22:12:56+00	{http,https}	\N	{}	{/v1/api/usage/ota}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+bbad51bf-495a-4d20-82c3-98c53fc55438	2018-11-08 02:31:41+00	2019-05-10 03:26:42+00	{http,https}	\N	{}	{/v1/applications/copy}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+544b2fe6-c7d9-4da3-93a7-2db214309c57	2019-05-27 10:28:04+00	2019-05-27 10:33:37+00	{http,https}	\N	{}	{/v1/device-group/devices}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+275edd4b-2e6d-4821-ad5f-391ba07779ea	2019-05-10 06:15:13+00	2019-05-10 06:16:11+00	{http,https}	\N	{}	{/v1/tasks/template}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+35f6975a-bc4f-41df-b0c0-034ec97204fc	2019-05-10 06:15:15+00	2019-05-10 08:57:31+00	{http,https}	\N	{}	{/v1/device-group}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+683939af-6e0b-4422-8d3c-daac06a3bdd9	2019-05-10 06:15:14+00	2019-05-10 09:24:19+00	{http,https}	\N	{}	{/v1/device-group/(?<id>.*)}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+7392ff1f-5128-4a94-838c-4aa34d563158	2019-05-10 06:15:15+00	2019-05-27 03:56:58+00	{http,https}	\N	{}	{/v1/customers}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+c24d55c4-e4dd-4ca6-af7f-9dc011beb1ba	2019-05-27 10:27:58+00	2019-05-27 10:30:27+00	{http,https}	\N	{}	{/v1/devices/(?<id>.*)/tasks}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+31099f6e-47a9-4448-a2a1-49d7c6fa9e3f	2019-05-27 10:26:23+00	2019-05-27 10:32:08+00	{http,https}	\N	{}	{/v1/device-group/(?<id>.*)/devices}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+db136bb4-b821-4eb5-aeb4-d525e18a6e54	2019-05-27 10:27:50+00	2019-05-28 09:47:54+00	{http,https}	\N	{}	{/v1/customers/(?<id>.*)}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+ea9e4ddf-8c76-4352-b5d9-5e0d2abf5ed8	2019-05-10 06:15:12+00	2019-05-31 10:31:55+00	{http,https}	\N	{}	{/v1/password}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+22d73e98-3f7f-47ed-af3c-0cc1280a7857	2019-06-05 10:16:41+00	2019-06-05 10:18:28+00	{http,https}	\N	{}	{/v1/device-group/tasks}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+3654c6ae-3e63-4f6b-a456-ad8b25a3711c	2019-06-05 10:16:42+00	2019-06-05 10:18:54+00	{http,https}	\N	{}	{/v1/device-group/statistics}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+3cf4d99a-15d3-48cc-98e8-f35a5236043d	2019-06-05 10:16:18+00	2019-06-05 10:19:54+00	{http,https}	\N	{}	{/v1/device-group/model-devices}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+e031fe03-b1aa-47de-a5f4-8e69ee0ce714	2018-11-08 02:31:41+00	2019-06-05 10:28:39+00	{http,https}	\N	{}	{/v1/devices/(?<id>.*)/tags}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+4a8c188d-a42d-4f3d-8692-ad62abc2feba	2019-06-05 10:16:39+00	2019-06-06 09:29:40+00	{http,https}	\N	{}	{/v1/tasks/template/(?<id>.*)}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+ebb7dcc1-912b-4d05-9fb8-e3cab18ea4c8	2019-01-25 02:26:07+00	2019-06-11 09:00:50+00	{http,https}	\N	{}	{/v1/devices/logs}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+99fdc0ee-e51d-4492-a239-e6b2eb14b25c	2019-06-05 10:16:37+00	2019-06-05 10:16:37+00	{http,https}	\N	\N	{/v1/applications/statistics}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+839e5832-8e6a-4f50-a928-57d2a882a344	2019-06-05 10:16:40+00	2019-06-05 10:16:40+00	{http,https}	\N	\N	{/v1/solutions/statistics}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+7174a41e-7b0e-4a9e-828c-0e3f40849a23	2019-06-05 10:16:43+00	2019-06-05 10:16:43+00	{http,https}	\N	\N	{/v1/solutions/statistics/devices}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+8b7e1333-fb41-4c80-8b8b-a59e709e4a15	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/resources}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+0d4859d9-2145-438a-8d2f-70d214011fa1	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/users/login}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+a566b5d6-2ceb-4294-8786-1d198018ec33	2018-11-08 02:31:40+00	2018-11-08 02:31:40+00	{http,https}	\N	\N	{/v1/audit}	0	t	f	a7093069-77b9-408d-bfa6-0668e2ccf6b0
+\.
+
+
+--
+-- Data for Name: schema_migrations; Type: TABLE DATA; Schema: public; Owner: kong
+--
+
+COPY public.schema_migrations (id, migrations) FROM stdin;
+core	{2015-01-12-175310_skeleton,2015-01-12-175310_init_schema,2015-11-23-817313_nodes,2016-02-29-142793_ttls,2016-09-05-212515_retries,2016-09-16-141423_upstreams,2016-12-14-172100_move_ssl_certs_to_core,2016-11-11-151900_new_apis_router_1,2016-11-11-151900_new_apis_router_2,2016-11-11-151900_new_apis_router_3,2016-01-25-103600_unique_custom_id,2017-01-24-132600_upstream_timeouts,2017-01-24-132600_upstream_timeouts_2,2017-03-27-132300_anonymous,2017-04-18-153000_unique_plugins_id,2017-04-18-153000_unique_plugins_id_2,2017-05-19-180200_cluster_events,2017-05-19-173100_remove_nodes_table,2017-06-16-283123_ttl_indexes,2017-07-28-225000_balancer_orderlist_remove,2017-10-02-173400_apis_created_at_ms_precision,2017-11-07-192000_upstream_healthchecks,2017-10-27-134100_consistent_hashing_1,2017-11-07-192100_upstream_healthchecks_2,2017-10-27-134100_consistent_hashing_2,2017-09-14-121200_routes_and_services,2017-10-25-180700_plugins_routes_and_services,2018-03-27-123400_prepare_certs_and_snis,2018-03-27-125400_fill_in_snis_ids,2018-03-27-130400_make_ids_primary_keys_in_snis,2018-05-17-173100_hash_on_cookie}
+\.
+
+
+--
+-- Data for Name: services; Type: TABLE DATA; Schema: public; Owner: kong
+--
+
+COPY public.services (id, created_at, updated_at, name, retries, protocol, host, port, path, connect_timeout, write_timeout, read_timeout) FROM stdin;
+a7093069-77b9-408d-bfa6-0668e2ccf6b0	2018-11-08 02:25:04+00	2018-11-08 02:25:04+00	private-cloud-demo	5	http	10.192.208.195	8080	\N	60000	60000	60000
+\.
+
+
+--
+-- Data for Name: snis; Type: TABLE DATA; Schema: public; Owner: kong
+--
+
+COPY public.snis (name, certificate_id, created_at, id) FROM stdin;
+api.edgescale.org	21b69eab-09d9-40f9-a55e-c4ee47fada68	2019-09-03 11:16:54.046+00	daa105c8-9208-49e7-83fa-2fc0da28c6bd
+\.
+
+
+--
+-- Data for Name: targets; Type: TABLE DATA; Schema: public; Owner: kong
+--
+
+COPY public.targets (id, target, weight, upstream_id, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: ttls; Type: TABLE DATA; Schema: public; Owner: kong
+--
+
+COPY public.ttls (primary_key_value, primary_uuid_value, table_name, primary_key_name, expire_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: upstreams; Type: TABLE DATA; Schema: public; Owner: kong
+--
+
+COPY public.upstreams (id, name, slots, created_at, healthchecks, hash_on, hash_fallback, hash_on_header, hash_fallback_header, hash_on_cookie, hash_on_cookie_path) FROM stdin;
+\.
+
+
+--
+-- Name: apis apis_name_key; Type: CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.apis
+    ADD CONSTRAINT apis_name_key UNIQUE (name);
+
+
+--
+-- Name: apis apis_pkey; Type: CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.apis
+    ADD CONSTRAINT apis_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cluster_events cluster_events_pkey; Type: CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.cluster_events
+    ADD CONSTRAINT cluster_events_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: consumers consumers_custom_id_key; Type: CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.consumers
+    ADD CONSTRAINT consumers_custom_id_key UNIQUE (custom_id);
+
+
+--
+-- Name: consumers consumers_pkey; Type: CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.consumers
+    ADD CONSTRAINT consumers_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: consumers consumers_username_key; Type: CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.consumers
+    ADD CONSTRAINT consumers_username_key UNIQUE (username);
+
+
+--
+-- Name: plugins plugins_id_key; Type: CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.plugins
+    ADD CONSTRAINT plugins_id_key UNIQUE (id);
+
+
+--
+-- Name: plugins plugins_pkey; Type: CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.plugins
+    ADD CONSTRAINT plugins_pkey PRIMARY KEY (id, name);
+
+
+--
+-- Name: routes routes_pkey; Type: CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.routes
+    ADD CONSTRAINT routes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.schema_migrations
+    ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: services services_name_key; Type: CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.services
+    ADD CONSTRAINT services_name_key UNIQUE (name);
+
+
+--
+-- Name: services services_pkey; Type: CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.services
+    ADD CONSTRAINT services_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: snis snis_name_unique; Type: CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.snis
+    ADD CONSTRAINT snis_name_unique UNIQUE (name);
+
+
+--
+-- Name: snis snis_pkey; Type: CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.snis
+    ADD CONSTRAINT snis_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: certificates ssl_certificates_pkey; Type: CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.certificates
+    ADD CONSTRAINT ssl_certificates_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: targets targets_pkey; Type: CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.targets
+    ADD CONSTRAINT targets_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ttls ttls_pkey; Type: CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.ttls
+    ADD CONSTRAINT ttls_pkey PRIMARY KEY (primary_key_value, table_name);
+
+
+--
+-- Name: upstreams upstreams_name_key; Type: CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.upstreams
+    ADD CONSTRAINT upstreams_name_key UNIQUE (name);
+
+
+--
+-- Name: upstreams upstreams_pkey; Type: CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.upstreams
+    ADD CONSTRAINT upstreams_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: apis_name_idx; Type: INDEX; Schema: public; Owner: kong
+--
+
+CREATE INDEX apis_name_idx ON public.apis USING btree (name);
+
+
+--
+-- Name: custom_id_idx; Type: INDEX; Schema: public; Owner: kong
+--
+
+CREATE INDEX custom_id_idx ON public.consumers USING btree (custom_id);
+
+
+--
+-- Name: idx_cluster_events_at; Type: INDEX; Schema: public; Owner: kong
+--
+
+CREATE INDEX idx_cluster_events_at ON public.cluster_events USING btree (at);
+
+
+--
+-- Name: idx_cluster_events_channel; Type: INDEX; Schema: public; Owner: kong
+--
+
+CREATE INDEX idx_cluster_events_channel ON public.cluster_events USING btree (channel);
+
+
+--
+-- Name: plugins_api_idx; Type: INDEX; Schema: public; Owner: kong
+--
+
+CREATE INDEX plugins_api_idx ON public.plugins USING btree (api_id);
+
+
+--
+-- Name: plugins_consumer_idx; Type: INDEX; Schema: public; Owner: kong
+--
+
+CREATE INDEX plugins_consumer_idx ON public.plugins USING btree (consumer_id);
+
+
+--
+-- Name: plugins_name_idx; Type: INDEX; Schema: public; Owner: kong
+--
+
+CREATE INDEX plugins_name_idx ON public.plugins USING btree (name);
+
+
+--
+-- Name: plugins_route_id_idx; Type: INDEX; Schema: public; Owner: kong
+--
+
+CREATE INDEX plugins_route_id_idx ON public.plugins USING btree (route_id);
+
+
+--
+-- Name: plugins_service_id_idx; Type: INDEX; Schema: public; Owner: kong
+--
+
+CREATE INDEX plugins_service_id_idx ON public.plugins USING btree (service_id);
+
+
+--
+-- Name: routes_fkey_service; Type: INDEX; Schema: public; Owner: kong
+--
+
+CREATE INDEX routes_fkey_service ON public.routes USING btree (service_id);
+
+
+--
+-- Name: targets_target_idx; Type: INDEX; Schema: public; Owner: kong
+--
+
+CREATE INDEX targets_target_idx ON public.targets USING btree (target);
+
+
+--
+-- Name: ttls_primary_uuid_value_idx; Type: INDEX; Schema: public; Owner: kong
+--
+
+CREATE INDEX ttls_primary_uuid_value_idx ON public.ttls USING btree (primary_uuid_value);
+
+
+--
+-- Name: upstreams_name_idx; Type: INDEX; Schema: public; Owner: kong
+--
+
+CREATE INDEX upstreams_name_idx ON public.upstreams USING btree (name);
+
+
+--
+-- Name: username_idx; Type: INDEX; Schema: public; Owner: kong
+--
+
+CREATE INDEX username_idx ON public.consumers USING btree (lower(username));
+
+
+--
+-- Name: cluster_events delete_expired_cluster_events_trigger; Type: TRIGGER; Schema: public; Owner: kong
+--
+
+CREATE TRIGGER delete_expired_cluster_events_trigger AFTER INSERT ON public.cluster_events FOR EACH STATEMENT EXECUTE PROCEDURE public.delete_expired_cluster_events();
+
+
+--
+-- Name: plugins plugins_api_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.plugins
+    ADD CONSTRAINT plugins_api_id_fkey FOREIGN KEY (api_id) REFERENCES public.apis(id) ON DELETE CASCADE;
+
+
+--
+-- Name: plugins plugins_consumer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.plugins
+    ADD CONSTRAINT plugins_consumer_id_fkey FOREIGN KEY (consumer_id) REFERENCES public.consumers(id) ON DELETE CASCADE;
+
+
+--
+-- Name: plugins plugins_route_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.plugins
+    ADD CONSTRAINT plugins_route_id_fkey FOREIGN KEY (route_id) REFERENCES public.routes(id) ON DELETE CASCADE;
+
+
+--
+-- Name: plugins plugins_service_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.plugins
+    ADD CONSTRAINT plugins_service_id_fkey FOREIGN KEY (service_id) REFERENCES public.services(id) ON DELETE CASCADE;
+
+
+--
+-- Name: routes routes_service_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.routes
+    ADD CONSTRAINT routes_service_id_fkey FOREIGN KEY (service_id) REFERENCES public.services(id);
+
+
+--
+-- Name: snis snis_certificate_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.snis
+    ADD CONSTRAINT snis_certificate_id_fkey FOREIGN KEY (certificate_id) REFERENCES public.certificates(id);
+
+
+--
+-- Name: targets targets_upstream_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: kong
+--
+
+ALTER TABLE ONLY public.targets
+    ADD CONSTRAINT targets_upstream_id_fkey FOREIGN KEY (upstream_id) REFERENCES public.upstreams(id) ON DELETE CASCADE;
+
+
+--
+-- PostgreSQL database dump complete
+--
+

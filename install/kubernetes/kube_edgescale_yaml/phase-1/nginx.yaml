@@ -1,0 +1,44 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: openfaas-util
+    component: nginx
+  name: nginx
+  namespace: "openfaas-util"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name:  nginx
+        resources:
+          requests:
+            memory: "120Mi"
+        image: nginx:1.15
+        imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: /etc/nginx/ssl
+          name: nginx-ssl
+        - mountPath: /etc/nginx/nginx.conf
+          name: nginx-conf
+        - mountPath: /usr/share/nginx/html
+          name: nginx-edg
+        ports:
+        - containerPort: 443
+          hostPort: 12443
+#          hostIP: 127.0.0.1
+      volumes:
+      - name: nginx-ssl
+        hostPath:
+          path: /etc/edgescale/etc/nginx/ssl
+      - name: nginx-conf
+        hostPath:
+          path: /etc/edgescale/etc/nginx/nginx.conf
+      - name: nginx-edg
+        hostPath:
+          path: /var/edgescale/nginx/www/edgescale

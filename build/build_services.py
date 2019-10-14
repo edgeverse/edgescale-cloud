@@ -44,11 +44,11 @@ def build_function(rootPath, function_name, docker_repo, docker_sub_dir):
 def generate_build_args():
   build_args = ""
   if os.environ.get("http_proxy"):
-    build_args += " --build-arg http_proxy=$http_proxy"
+    build_args += " --build-arg http_proxy='%s'" % os.environ.get("http_proxy")
   if os.environ.get("https_proxy"):
-    build_args += " --build-arg https_proxy=$https_proxy"
+    build_args += " --build-arg https_proxy='%s'" % os.environ.get("https_proxy")
   if os.environ.get("all_proxy"):
-    build_args += " --build-arg all_proxy=$all_proxy"
+    build_args += " --build-arg all_proxy='%s'" % os.environ.get("all_proxy")
   return build_args
 
 

@@ -94,7 +94,7 @@ backend harbor_cluster
 
 backend s380_cluster
    mode tcp
-   server is_s380 127.0.0.1:10086
+   server is_s380 minio-api-external:10086
 
 backend console_cluster
    mode tcp

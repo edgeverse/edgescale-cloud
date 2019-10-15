@@ -6,23 +6,17 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/minio/minio-go"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+	"time"
+
+	minio "github.com/minio/minio-go"
 )
 
-func upload(endpoint string, bucketName string, objectName string, contextType string, filePath string) {
-	accessKeyID := "CSSFSisdfEIKNC"
-	secretAccessKey := "isdEDegDFfsdfSDjsdlsdfDAO+k"
-	useSSL := false
-	location := "us-east-1"
-	minioClient, err := minio.New(endpoint, accessKeyID, secretAccessKey, useSSL)
-	if err != nil {
-		log.Fatalln(err)
-	}
+func upload(minioClient *minio.Client, bucketName, objectName, contextType, filePath string) {
 	buckets, err := minioClient.ListBuckets()
 	if err != nil {
 		fmt.Println(err)
@@ -31,6 +25,7 @@ func upload(endpoint string, bucketName string, objectName string, contextType s
 	for _, bucket := range buckets {
 		fmt.Println(bucket)
 	}
+	location := "us-east-1"
 	err = minioClient.MakeBucket(bucketName, location)
 	if err != nil {
 		exists, err := minioClient.BucketExists(bucketName)
@@ -54,18 +49,11 @@ func upload(endpoint string, bucketName string, objectName string, contextType s
 	log.Printf("Successfully upload %s of size %d\n", objectName, n)
 }
 
-func download(rw http.ResponseWriter, endpoint string, bucketName string, username string, objectname string) {
-	accessKeyID := "CSSFSisdfEIKNC"
-	secretAccessKey := "isdEDegDFfsdfSDjsdlsdfDAO+k"
-	useSSL := false
-	minioClient, err := minio.New(endpoint, accessKeyID, secretAccessKey, useSSL)
-	if err != nil {
-		log.Fatalln(err)
-	}
+func download(rw http.ResponseWriter, minioClient *minio.Client, bucketName, username, objectname string) {
 	objname := fmt.Sprintf("%slog.txt/%s", username, strings.Split(objectname, "/")[1])
 	fmt.Println(bucketName, objname)
 
-	err = minioClient.FGetObject(bucketName, objname, "/tmp/temp.txt", minio.GetObjectOptions{})
+	err := minioClient.FGetObject(bucketName, objname, "/tmp/temp.txt", minio.GetObjectOptions{})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -87,18 +75,20 @@ func handler(rw http.ResponseWriter, req *http.Request) {
 	rw.Header().Set("Access-Control-Allow-Headers", "content-type, dcca_token")
 
 	endpoint := fmt.Sprintf("%s:9000", os.Getenv("hostIp"))
-	print(endpoint)
 	fmt.Println(endpoint)
+	accessKeyID := os.Getenv("accessKeyID")
+	secretAccessKey := os.Getenv("secretAccessKey")
 	query := req.URL.Query()
-	fmt.Println(query)
 	rootName := "public-bucket"
 	bucketName = query.Get("username")
 	objectName = bucketName + "/" + query.Get("objectname")
 	contextType = query.Get("type")
 	tmpFile := "/tmp/" + query.Get("objectname")
-	method := req.Header.Get("Access-Control-Request-Method")
-	log.Printf(method)
-
+	useSSL := false
+	minioClient, err := minio.New(endpoint, accessKeyID, secretAccessKey, useSSL)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	var stringBuilder bytes.Buffer
 	stringBuilder.WriteString(fmt.Sprintf("http://%s/", endpoint))
 	stringBuilder.WriteString(rootName)
@@ -109,20 +99,14 @@ func handler(rw http.ResponseWriter, req *http.Request) {
 	err_objectname := []byte("Failed to upload, the objectname is NULL")
 	fmt.Println(req)
 	if req.Method == "PUT" {
-		log.Printf("Put start\n")
 		data, _ := ioutil.ReadAll(req.Body)
 		f, _ := os.OpenFile(tmpFile, os.O_CREATE|os.O_WRONLY, 0666)
 		defer f.Close()
 		f.WriteString(string(data))
 		req.Body.Close()
-		f.Close()
-		host := req.Host
-		log.Printf(host)
-		log.Printf(bucketName)
-		fmt.Println(objectName)
 		if bucketName != "" {
 			if objectName != "" {
-				upload(endpoint, rootName, objectName, contextType, tmpFile)
+				upload(minioClient, rootName, objectName, contextType, tmpFile)
 				rw.Write(urls)
 			} else {
 				rw.Write(err_objectname)
@@ -133,10 +117,8 @@ func handler(rw http.ResponseWriter, req *http.Request) {
 
 		log.Printf("Put end\n")
 	} else if req.Method == "GET" && contextType != "text" {
-		log.Printf("Get start\n")
 		if bucketName != "" {
 			if objectName != "" {
-				//	download(bucketName, objectName)
 				rw.Write(urls)
 			} else {
 				rw.Write(err_objectname)
@@ -149,7 +131,7 @@ func handler(rw http.ResponseWriter, req *http.Request) {
 	} else {
 		if bucketName != "" {
 			if objectName != "" {
-				download(rw, endpoint, rootName, bucketName, objectName)
+				download(rw, minioClient, rootName, bucketName, objectName)
 			}
 		} else {
 			rw.Write(err_username)
@@ -160,5 +142,12 @@ func handler(rw http.ResponseWriter, req *http.Request) {
 func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/signer", handler)
-	http.ListenAndServeTLS("0.0.0.0:10086", "/root/edgescale.crt", "/root/edgescale.key", mux)
+	s := &http.Server{
+		Addr:           ":10086",
+		Handler:        mux,
+		ReadTimeout:    160 * time.Second,
+		WriteTimeout:   1600 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+	s.ListenAndServeTLS("/root/edgescale.crt", "/root/edgescale.key")
 }

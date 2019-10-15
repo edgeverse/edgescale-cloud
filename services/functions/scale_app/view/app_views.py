@@ -930,7 +930,7 @@ def query_app_statistics():
     }
 
     ctx.current_user = DccaUser.get_by_id(uid)
-    return DccaApplication.get_app_statistics(K8S_HOST, K8S_PORT, params)
+    return jsonify(DccaApplication.get_app_statistics(K8S_HOST, K8S_PORT, params))
 
 
 @app_bp.route("/store", methods=["GET"])

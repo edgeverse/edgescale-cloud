@@ -16,22 +16,26 @@ spec:
     spec:
       containers:
       - name:  minio
-        resources:
-          requests:
-            memory: "120Mi"
-        image: pcloud.edgescale.org/pcloud/minio-api
+        image: pcloud.edgescale.org/pcloud/minio 
         imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: /data 
+          name: minio-volume
         env:
         - name: MINIO_ACCESS_KEY
           value: CSSFSisdfEIKNC
         - name: MINIO_SECRET_KEY
-          value: isdEDegDFfsdfSDjsdlsdfDAO+k
+          value: isdEDegDFfsdfSDjsdlsdfDAO+k 
         ports:
         - containerPort: 9000
           hostPort: 9000
-        command: ["/root/minio_transfer_server"]
+        command: ["minio"]
         args:
           - server
           - /data
+      volumes:
+      - name: minio-volume
+        hostPath:
+          path: /mnt/data 
       imagePullSecrets:
         - name: kube-repos

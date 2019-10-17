@@ -3,7 +3,6 @@ FROM python:3.7-alpine
 
 COPY --from=watchdog /fwatchdog /usr/bin/fwatchdog
 RUN chmod +x /usr/bin/fwatchdog
-ENV http_proxy=http://wbi\nxf42681:Welcome%402017@92.121.140.44:8080
 RUN apk update && apk add postgresql-dev gcc python3-dev musl-dev 
 ARG ADDITIONAL_PACKAGE
 # Alternatively use ADD https:// (which will not be cached by Docker builder)
@@ -43,7 +42,6 @@ ENV fprocess="python index.py"
 ENV cgi_headers="true"
 ENV mode="http"
 ENV upstream_url="http://127.0.0.1:5000"
-ENV http_proxy=""
 HEALTHCHECK --interval=5s CMD [ -e /tmp/.lock ] || exit 1
 
 CMD ["fwatchdog"]

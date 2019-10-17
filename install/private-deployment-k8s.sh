@@ -349,6 +349,9 @@ function Prepare_edgescale_env(){
     sed -i "s/secret_key/$MINIO_SECRET_KEY/g" $basepath/install/kubernetes/kube_edgescale_yaml/phase-2/minio.yaml
     sed -i "s/HARBOR_URL\/HARBOR_REPO_SUB_DIR/$HARBOR_DOMAIN\/$HARBOR_REPO_SUB_DIR/g" $basepath/install/kubernetes/kube_edgescale_yaml/phase-2/minio.yaml
 
+    sed -i "s/access_key/$MINIO_ACCESS_KEY/g" $basepath/install/kubernetes/kube_edgescale_yaml/phase-2/minio-api.yaml
+    sed -i "s/secret_key/$MINIO_SECRET_KEY/g" $basepath/install/kubernetes/kube_edgescale_yaml/phase-2/minio-api.yaml
+    sed -i "s/HARBOR_URL\/HARBOR_REPO_SUB_DIR/$HARBOR_DOMAIN\/$HARBOR_REPO_SUB_DIR/g" $basepath/install/kubernetes/kube_edgescale_yaml/phase-2/minio-api.yaml
     cp $basepath/install/kubernetes/resource/*.dump /etc/edgescale/
     rm -rf /var/edgescale/postgresql/data/
 
@@ -443,6 +446,8 @@ function Start_edgescale(){
 
     kubectl expose service emqtt-external --port=1883 --target-port=1883  --name=emqtt-service1 --external-ip=$LocalIP --namespace=openfaas-util
     kubectl expose service emqtt-external --port=8883 --target-port=8883  --name=emqtt-service2 --external-ip=$LocalIP --namespace=openfaas-util
+    kubectl expose service minio-external --port=9000 --target-port=9000  --name=minio-service --external-ip=$LocalIP --namespace=openfaas-util
+    kubectl expose service minio-api-external --port=10086 --target-port=10086  --name=minio-api-service --external-ip=$LocalIP --namespace=openfaas-util
     kubectl expose service postgres-external --port=5432 --target-port=5432 --name=postgres-service --external-ip=$LocalIP --namespace=openfaas-util 
     kubectl expose service app-orch-svr-external --port=7443 --target-port=7443  --name=app-orch-svr-service --external-ip=$LocalIP --namespace=openfaas-util
     

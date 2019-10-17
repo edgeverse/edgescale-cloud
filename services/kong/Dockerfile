@@ -6,10 +6,6 @@ ARG RESTY_IMAGE_TAG="xenial"
 
 FROM ${RESTY_IMAGE_BASE}:${RESTY_IMAGE_TAG}
 
-
-ENV http_proxy=http://wbi\nxf42681:Welcome%402017@92.121.140.44:8080
-ENV https_proxy=https://wbi\nxf42681:Welcome%402017@92.121.140.44:8080
-
 # Docker Build Arguments
 ARG RESTY_VERSION="1.13.6.2"
 ARG RESTY_LUAROCKS_VERSION="2.4.4"
@@ -132,8 +128,5 @@ RUN luarocks install lua-resty-jwt
 RUN luarocks make kong-0.14.0-0.rockspec
 RUN apt remove -y git
 ENV PATH=$PATH:/home/bin
-ENV http_proxy=""
-ENV https_proxy=""
 CMD /home/startup.sh
-
 

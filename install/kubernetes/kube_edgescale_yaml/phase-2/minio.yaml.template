@@ -16,22 +16,26 @@ spec:
     spec:
       containers:
       - name:  minio
-        resources:
-          requests:
-            memory: "120Mi"
-        image: HARBOR_URL/HARBOR_REPO_SUB_DIR/minio-api
+        image: HARBOR_URL/HARBOR_REPO_SUB_DIR/minio 
         imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: /data 
+          name: minio-volume
         env:
         - name: MINIO_ACCESS_KEY
           value: access_key
         - name: MINIO_SECRET_KEY
-          value: secret_key
+          value: secret_key 
         ports:
         - containerPort: 9000
           hostPort: 9000
-        command: ["/root/minio_transfer_server"]
+        command: ["minio"]
         args:
           - server
           - /data
+      volumes:
+      - name: minio-volume
+        hostPath:
+          path: /mnt/data 
       imagePullSecrets:
         - name: kube-repos

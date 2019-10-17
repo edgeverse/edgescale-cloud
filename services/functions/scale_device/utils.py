@@ -343,11 +343,12 @@ except Exception:
         # hash:device_name
         value = redis_client.hgetall(device_name)
         if value:
+            report_time = value.get("Timestamp", "") 
             ds = {
                 "cpu_freq": "{:0.1f}GHz".format(int(value["CPUFreq"]) / 1000000) if "CPUFreq" in value else None,
                 "mem_total": "{:0.1f}GB".format(int(value["MemTotal"]) / 1000000) if "MemTotal" in value else None,
                 "app_list": value['AppList'] if int(value.get("AppNumber", 0)) > 0 and "AppList" in value else None,
-                "last_report": value.get("Timestamp", "").replace("T", " ").strip("Z"),
+                "last_report": report_time.replace("T", " ").strip("Z"),
                 "local_ip": value.get("IpAddr"),
                 "status": "online",
                 "cpu_usage": value.get("CPUUsage"),
@@ -358,6 +359,11 @@ except Exception:
                 "disk_free": value.get("DiskFree"),
                 "disk_used": value.get("DiskUsed")
             }
+            current_timestamp = get_current_utc_timestamp()
+            report_timestamp = get_utc_timestamp_from_time(datetime.strptime(str(report_time), '%Y-%m-%dT%H:%M:%SZ'))
+            interval = current_timestamp - report_timestamp
+            if interval > 180:
+                ds['status'] = "offline"
         else:
             ds = {
                 "status": "offline",

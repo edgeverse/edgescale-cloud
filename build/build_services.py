@@ -27,7 +27,7 @@ def build_function(rootPath, function_name, docker_repo, docker_sub_dir):
                       os.path.join(path, "edgescale_pymodels"))
       shutil.copytree(os.path.join(function_path, "edgescale_pyutils"),
                       os.path.join(path, "edgescale_pyutils"))
-      os.system("faas build -f {}.yml".format(function_name))
+      os.system("faas build {} -f {}.yml".format(generate_build_args(), function_name))
       print("-------build service {} complete-------".format(function_name))
       shutil.rmtree(path)
       shutil.rmtree(os.path.join(template_path, "build"))
@@ -41,21 +41,33 @@ def build_function(rootPath, function_name, docker_repo, docker_sub_dir):
     sys.exit()
 
 
+def generate_build_args():
+  build_args = ""
+  if os.environ.get("http_proxy"):
+    build_args += " --build-arg http_proxy='%s'" % os.environ.get("http_proxy")
+  if os.environ.get("https_proxy"):
+    build_args += " --build-arg https_proxy='%s'" % os.environ.get("https_proxy")
+  if os.environ.get("all_proxy"):
+    build_args += " --build-arg all_proxy='%s'" % os.environ.get("all_proxy")
+  return build_args
+
+
 def build_service(service_path, service_name, docker_repo, docker_sub_dir, tag="latest"):
+  build_args = generate_build_args()
   if service_name == "kong":
     os.chdir(os.path.split(os.path.split(service_path)[0])[0])
-    os.system("docker build -t %s:%s -f %s ." % (service_name, tag,
-                                                 os.path.join(service_path, "Dockerfile")))
+    os.system("docker build %s -t %s:%s -f %s ." % (build_args, service_name, tag,
+                                                    os.path.join(service_path, "Dockerfile")))
   else:
     os.chdir(service_path)
     if os.path.exists(os.path.join(service_path, "Makefile")):
       os.system("make")
       os.chdir(os.path.join(service_path, "build"))
-      os.system("docker build -t %s:%s ." % (service_name, tag))
+      os.system("docker build %s -t %s:%s ." % (build_args, service_name, tag))
       os.chdir(service_path)
       os.system("make clean")
     else:
-      os.system("docker build -t %s:%s ." % (service_name, tag))
+      os.system("docker build %s -t %s:%s ." % (build_args, service_name, tag))
   os.system("docker tag {0}:{1} {2}/{3}/{0}:{1} ".format(service_name, tag, docker_repo, docker_sub_dir))
   os.system("docker push {0}/{1}/{2}:{3} ".format(docker_repo, docker_sub_dir, service_name, tag))
   print("-------build service {} complete-------".format(service_name))
@@ -64,8 +76,8 @@ def build_service(service_path, service_name, docker_repo, docker_sub_dir, tag="
 def main(tag="latest"):
   rootPath = os.path.split(sys.path[0])[0]
   config_path = os.path.join(rootPath, "install/kubernetes/config/vars.json")
-  with open(config_path,"r") as f:
-      config_data = json.load(f)
+  with open(config_path, "r") as f:
+    config_data = json.load(f)
   docker_repo = config_data.get("env").get("harbor_domain")
   docker_sub_dir = config_data.get("env").get("harbor_respo_subdir")
   docker_user = config_data.get("env").get("harbor_user")

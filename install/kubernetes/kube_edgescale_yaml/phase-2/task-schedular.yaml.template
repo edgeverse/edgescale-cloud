@@ -14,7 +14,6 @@ spec:
       labels:
         app: task-schedular
     spec:
-      hostNetwork: true
       containers:
       - name:  task-schedular
         image: HARBOR_URL/HARBOR_REPO_SUB_DIR/task_schedular

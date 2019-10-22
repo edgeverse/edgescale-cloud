@@ -351,6 +351,7 @@ function Prepare_edgescale_env(){
 
     sed -i "s/access_key/$MINIO_ACCESS_KEY/g" $basepath/install/kubernetes/kube_edgescale_yaml/phase-2/minio-api.yaml
     sed -i "s/secret_key/$MINIO_SECRET_KEY/g" $basepath/install/kubernetes/kube_edgescale_yaml/phase-2/minio-api.yaml
+    sed -i "s/minio_ip/$LocalIP/g" $basepath/install/kubernetes/kube_edgescale_yaml/phase-2/minio-api.yaml
     sed -i "s/HARBOR_URL\/HARBOR_REPO_SUB_DIR/$HARBOR_DOMAIN\/$HARBOR_REPO_SUB_DIR/g" $basepath/install/kubernetes/kube_edgescale_yaml/phase-2/minio-api.yaml
     cp $basepath/install/kubernetes/resource/*.dump /etc/edgescale/
     rm -rf /var/edgescale/postgresql/data/

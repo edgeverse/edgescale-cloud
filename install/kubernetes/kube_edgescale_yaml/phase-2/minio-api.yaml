@@ -26,6 +26,8 @@ spec:
           value: CSSFSisdfEIKNC
         - name: secretAccessKey 
           value: isdEDegDFfsdfSDjsdlsdfDAO+k
+        - name: hostIp
+          value: 127.0.0.1
         ports:
         - containerPort: 10086
           hostPort: 10086

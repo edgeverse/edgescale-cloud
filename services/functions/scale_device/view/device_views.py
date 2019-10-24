@@ -684,7 +684,7 @@ def execute_operation():
         try:
             request.cursor.execute(update_device_lifecycle_by_device_name, (device_lifecycle, device_name))
             request.conn.commit()
-            execute_action = '{"action": "factory_reset"}'
+            execute_action = '{"action": "device_reset"}'
         except ClientError as e:
             request.conn.rollback()
             return jsonify({"error": e.response['Error']['Message']})
@@ -692,10 +692,10 @@ def execute_operation():
     elif operation_method == "reboot":
         if current_status == RETIRED:
             return jsonify({"status": "fail", "message": "fail to reboot"})
-        execute_action = {
+        execute_action = json.dumps({
                 'action': 'device_reboot',
                 'mid': str(uuid.uuid4()),
-         }
+         })
 
     try:
         cc = {
@@ -1336,6 +1336,8 @@ def device_get_endpoint(device_id):
             endpoints['mqtt'] = dict({'uri': endpoint['url'] + ":" + endpoint['port']})
         elif not endpoint['name'].lower().find('dockerrepo'):
             endpoints['docker_trust_token'] = endpoint['access_token']
+        elif not endpoint['name'].lower().find('accesskey'):
+            endpoints['accesskey'] = endpoint['accesskey']
         else:
             endpoints.update(
                 dict({endpoint['name'].lower().replace(" ", "_"): endpoint['url'] + ":" + endpoint['port']}))

@@ -71,6 +71,72 @@ def query_registries():
     return jsonify(results)
 
 
+@registry_bp.route("", methods=["DELETE"])
+def delete_registry():
+    uid, err = get_oemid(request=request)
+    if err is not None:
+        return jsonify(UNAUTH_RESULT)
+
+    check_json(request)
+    registry_ids = get_json(request).get("registry_ids")
+    is_admin = True if request.headers.get('admin') == 'true' else False
+
+    if not registry_ids:
+        return jsonify({
+            'status': 'fail',
+            'message': 'The "registry_ids" can not be empty'
+        })
+
+    registry_ids = ",".join(str(r) for r in registry_ids)
+
+    query_registry_cmd = query_registry_sql.format(registry_ids=registry_ids)
+    request.cursor.execute(query_registry_cmd)
+    registries = request.cursor.fetchall()
+    if not registries:
+        return jsonify({
+            'status': 'fail',
+            'message': 'Registries not exist'
+        })
+
+    id_list = []
+    for registry in registries:
+        registry = RegistryFull._make(registry)
+        if registry.owner_id != int(uid) and not registry.public:
+            return jsonify({
+                'status': 'fail',
+                'message': 'Not authorized to this registry'
+            })
+
+        if registry.public and not is_admin:
+            # TODO We should allow not only administrator but also authorized user to delete registry
+            return jsonify{
+                'status': 'fail',
+                'message': 'Only administrator can delete public registry'
+            })
+        id_list.append(str(registry.id))
+    ids = ",".join(id_list)
+    remove_registry_cmd = remove_registry_sql.format(registry_ids=ids)
+    remove_softapp_cmd = remove_softapp_sql.format(mirror_ids=ids)
+    query_softapps_cmd = query_softapps_sql.format(mirror_ids=ids)
+    request.cursor.execute(query_softapps_cmd)
+    soft_app_ids = request.cursor.fetchall()
+
+    try:
+        for sid in soft_app_ids:
+            remove_da_inst_cmd = remove_da_inst_sql.format(softapp_id=sid[0])
+            request.cursor.execute(remove_da_inst_cmd)
+        request.cursor.execute(remove_softapp_cmd)
+        request.cursor.execute(remove_registry_cmd)
+        request.conn.commit()
+    except Exception:
+        raise DCCAException('Fail to remove registries')
+
+    return jsonify({
+        'status': 'success',
+        'message': 'Success to remove registries'
+    })
+
+
 @registry_bp.route("", methods=["POST"])
 def add_registry():
     uid, err = get_oemid(request=request)
@@ -86,6 +152,12 @@ def add_registry():
         return jsonify({
             'status': 'fail',
             'message': 'Only administrator can add public registry'
+        })
+
+    if name == 'devops.nxp.com' and not is_public:
+        return jsonify({
+            'status': 'fail',
+            'message': 'Cannot add "devops.nxp.com" as private.'
         })
 
     if is_public and is_admin:
@@ -117,62 +189,3 @@ def get_login():
         return jsonify(result)
     except Exception as e:
         raise DCCAException(str(e))
-
-
-@registry_bp.route("/<registry_id>", methods=["DELETE"])
-def delete_registry(registry_id):
-    uid, err = get_oemid(request=request)
-    if err is not None:
-        return jsonify(UNAUTH_RESULT)
-
-    is_admin = True if request.headers.get('admin') == 'true' else False
-
-    if not registry_id:
-        return jsonify({
-            'status': 'fail',
-            'message': 'The "registry_id" can not be empty'
-        })
-
-    query_registry_cmd = query_registry_sql.format(registry_id=registry_id)
-    request.cursor.execute(query_registry_cmd)
-    registry = request.cursor.fetchone()
-    if not registry:
-        return jsonify({
-            'status': 'fail',
-            'message': 'Registry not exist'
-        })
-
-    registry = RegistryFull._make(registry)
-    if registry.owner_id != uid and not registry.public:
-        return jsonify({
-            'status': 'fail',
-            'message': 'Not authorized to this registry'
-        })
-
-    if registry.public and not is_admin:
-        # TODO We should allow not only administrator but also authorized user to delete registry
-        return jsonify({
-            'status': 'fail',
-            'message': 'Only administrator can delete public registry'
-        })
-
-    remove_registry_cmd = remove_registry_sql.format(registry_id=registry.id)
-    remove_softapp_cmd = remove_softapp_sql.format(mirror_id=registry.id)
-    query_softapps_cmd = query_softapps_sql.format(mirror_id=registry.id)
-    request.cursor.execute(query_softapps_cmd)
-    soft_app_ids = request.cursor.fetchall()
-
-    try:
-        for sid in soft_app_ids:
-            remove_da_inst_cmd = remove_da_inst_sql.format(softapp_id=sid[0])
-            request.cursor.execute(remove_da_inst_cmd)
-        request.cursor.execute(remove_softapp_cmd)
-        request.cursor.execute(remove_registry_cmd)
-        request.conn.commit()
-    except Exception:
-        raise DCCAException('Fail to remove registry')
-
-    return jsonify({
-        'status': 'success',
-        'message': 'Success to remove registry'
-    })

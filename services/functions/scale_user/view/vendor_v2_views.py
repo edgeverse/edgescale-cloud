@@ -55,7 +55,7 @@ def create_vendor():
 
     check_json(request)
     name = get_json(request).get("name")
-    is_public = get_json(request).get("is_public", False)
+    is_public = get_json(request).get("is_public") or False
     if not name:
         raise InvalidInputException("vendor name is empty.")
 

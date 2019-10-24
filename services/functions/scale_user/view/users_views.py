@@ -177,7 +177,6 @@ def create_user(username, password, email, oem_id=None, account_type_id=ACCOUNT_
     except Exception:
         raise DCCAException('Fail to create user role')
 
-
     # Make the limits data
     request.cursor.execute(query_limit_types_sql)
     limit_types = request.cursor.fetchall()

@@ -16,6 +16,10 @@ import (
 	minio "github.com/minio/minio-go"
 )
 
+func init() {
+	os.Setenv("GODEBUG", "http2server=0,http2client=0")
+}
+
 func checkErr(err error) {
 	if err != nil {
 		log.Println(err)

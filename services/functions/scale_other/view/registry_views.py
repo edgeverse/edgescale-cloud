@@ -109,7 +109,7 @@ def delete_registry():
 
         if registry.public and not is_admin:
             # TODO We should allow not only administrator but also authorized user to delete registry
-            return jsonify{
+            return jsonify({
                 'status': 'fail',
                 'message': 'Only administrator can delete public registry'
             })

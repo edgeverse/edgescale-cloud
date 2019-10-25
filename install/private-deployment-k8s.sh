@@ -436,9 +436,6 @@ function Start_edgescale(){
 
     kubectl apply -f $basepath/install/kubernetes/kube_edgescale_yaml/phase-2
 
-    pod_name=kong
-    Wait_pod_running
-
     pod_name=minio
     Wait_pod_running
 
@@ -468,6 +465,10 @@ function Modify_config(){
 
 
 function Start_scale_function(){
+    kubectl delete pods -n openfaas-util `kubectl get pods -A |grep kong | awk '{print $2}'`
+    pod_name=kong 
+    Wait_pod_running 
+
     cd $basepath/build/openfaas_template
     python gen_yaml.py
 

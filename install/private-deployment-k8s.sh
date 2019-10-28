@@ -481,6 +481,7 @@ function Start_scale_function(){
 
     export OPENFAAS_URL=http://127.0.0.1:31112
     cd $basepath/build/openfaas_template
+    faas-cli login -u $FAAS_USER -p $FAAS_PASSWORD 
     for f in `ls *.yml`
         do
             faas-cli deploy -f $f

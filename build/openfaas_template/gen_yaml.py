@@ -30,7 +30,7 @@ def handler(scale_list):
   with open(config_path,"r") as f:
       config_data = json.load(f)
   docker_repo = config_data.get("env").get("harbor_domain")
-  docker_sub_dir = config_data.get("env").get("harbor_respo_subdir")
+  docker_sub_dir = config_data.get("env").get("harbor_project_name")
   for fi in scale_list:
     with open("{}.yml".format(fi), 'w') as f:
       f.write(template_yaml.format(fi, docker_repo, docker_sub_dir))

@@ -49,8 +49,8 @@ HOST_SITE = config['HOST_SITE']
 IS_DEBUG = config["DEBUG"]
 
 # The k8s
-K8S_HOST = config['K8S_HOST']
-K8S_PORT = config['K8S_PORT']
+APPSERVER_HOST = config['APPSERVER_HOST']
+APPSERVER_PORT = config['APPSERVER_PORT']
 
 # The mqtt
 MQTT_HOST = config['MQTT_HOST']

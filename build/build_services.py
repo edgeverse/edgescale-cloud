@@ -79,10 +79,10 @@ def main(tag="latest"):
   with open(config_path, "r") as f:
     config_data = json.load(f)
   docker_repo = config_data.get("env").get("harbor_domain")
-  docker_sub_dir = config_data.get("env").get("harbor_respo_subdir")
+  docker_sub_dir = config_data.get("env").get("harbor_project_name")
   docker_user = config_data.get("env").get("harbor_user")
-  docker_userpasswd = config_data.get("env").get("harbor_pass")
-  docker_remot_ip = config_data.get("env").get("harbor_ip_address")
+  docker_userpasswd = config_data.get("env").get("harbor_passwd")
+  docker_remot_ip = config_data.get("env").get("harbor_host_ip")
   if os.popen("grep -rn '{0}' /etc/hosts|wc -l".format(docker_repo)).read()[0] == '0':
     os.system("sudo sed -i '$a {0} {1}' /etc/hosts".format(docker_remot_ip, docker_repo))
   os.system("docker login -p {0} -u {1} {2}".format(docker_userpasswd, docker_user, docker_repo))

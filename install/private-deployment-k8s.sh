@@ -17,22 +17,22 @@ if [ ! `command -v jq` ];then
     apt install -y jq
 fi
 
-FAAS_PASSWORD=$(cat $ConfigPath | jq -r '.env.faas_pass')
+FAAS_PASSWORD=$(cat $ConfigPath | jq -r '.env.faas_passwd')
 FAAS_USER=$(cat $ConfigPath | jq -r '.env.faas_user')
 
-POSTGRES_PASSWD=$(cat $ConfigPath | jq -r '.db.pg_pass')
-POSTGRES_ES_PASSWD=$(cat $ConfigPath | jq -r '.db.pg_es_pass')
-POSTGRES_KONG_PASSWD=$(cat $ConfigPath | jq -r '.db.kong_pass')
+POSTGRES_PASSWD=$(cat $ConfigPath | jq -r '.db.pg_passwd')
+POSTGRES_ES_PASSWD=$(cat $ConfigPath | jq -r '.db.pg_es_passwd')
+POSTGRES_KONG_PASSWD=$(cat $ConfigPath | jq -r '.db.kong_passwd')
 POSTGRES_MAX_CONNECTION=$(cat $ConfigPath | jq -r '.db.pg_max_connections')
-REDIS_PASSWORD=$(cat $ConfigPath | jq -r '.service.REDIS_PWD' )
+REDIS_PASSWORD=$(cat $ConfigPath | jq -r '.service.REDIS_PASSWD' )
 
 MINIO_ACCESS_KEY=$(cat $ConfigPath | jq -r '.minio.access_key')
 MINIO_SECRET_KEY=$(cat $ConfigPath | jq -r '.minio.secret_key')
 
-HARBOR_IP_ADDRESS=$(cat $ConfigPath | jq -r '.env.harbor_ip_address')
+HARBOR_IP_ADDRESS=$(cat $ConfigPath | jq -r '.env.harbor_host_ip')
 HARBOR_DOMAIN=$(cat $ConfigPath | jq -r '.env.harbor_domain')
-HARBOR_REPO_SUB_DIR=$(cat $ConfigPath | jq -r '.env.harbor_respo_subdir')
-HARBOR_PASSWORD=$(cat $ConfigPath | jq -r '.env.harbor_pass')
+HARBOR_REPO_SUB_DIR=$(cat $ConfigPath | jq -r '.env.harbor_project_name')
+HARBOR_PASSWORD=$(cat $ConfigPath | jq -r '.env.harbor_passwd')
 HARBOR_USER=$(cat $ConfigPath | jq -r '.env.harbor_user')
 
 DOMAIN_NAME=$(cat $ConfigPath | jq -r '.env.domain_name')
@@ -481,6 +481,7 @@ function Start_scale_function(){
 
     export OPENFAAS_URL=http://127.0.0.1:31112
     cd $basepath/build/openfaas_template
+    faas-cli login -u $FAAS_USER -p $FAAS_PASSWORD 
     for f in `ls *.yml`
         do
             faas-cli deploy -f $f

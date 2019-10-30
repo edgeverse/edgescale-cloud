@@ -48,9 +48,9 @@ HOST_SITE = config['HOST_SITE']
 IS_DEBUG = config["DEBUG"]
 
 # The k8s
-_DNS = K8S_PUBLIC_DNS = config['K8S_HOST']     # public DNS
-K8S_PRIVATE_DNS = config['K8S_HOST']
-_PORT = K8S_PORT = config['K8S_PORT']
+_DNS = K8S_PUBLIC_DNS = config['APPSERVER_HOST']     # public DNS
+K8S_PRIVATE_DNS = config['APPSERVER_HOST']
+_PORT = APPSERVER_PORT = config['APPSERVER_PORT']
 
 # The mqtt
 MQTT_HOST = config['MQTT_HOST']
@@ -62,7 +62,7 @@ HARBORPASSWD = config.get('HARBOR_ADMIN_PASS', 'Hharbor12345')
 
 REDIS_HOST = config['REDIS_HOST']
 REDIS_PORT = config['REDIS_PORT']
-REDIS_PWD = config['REDIS_PWD']
+REDIS_PASSWD = config['REDIS_PASSWD']
 REST_API_ID = config['REST_API_ID']
 SHORT_REST_API_ID = config['REST_API_SHORT_ID']
 
@@ -73,5 +73,5 @@ engine_url = 'postgresql://{username}:{pwd}@{host}:{port}/{db}'.format(
 engine = create_engine(engine_url, pool_size=10)
 session.configure(bind=engine)
 
-redis_client = connect_redis(REDIS_HOST, port=REDIS_PORT, pwd=REDIS_PWD)
+redis_client = connect_redis(REDIS_HOST, port=REDIS_PORT, pwd=REDIS_PASSWD)
 redis_client.rest_api_id = REST_API_ID

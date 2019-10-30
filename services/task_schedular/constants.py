@@ -160,8 +160,8 @@ env = 'prod'
 
 
 class ProductConfig(dict):
-    K8S_HOST = ''
-    K8S_PORT = 443
+    APPSERVER_HOST = ''
+    APPSERVER_PORT = 443
     DB_HOST = ''
     DB_PORT = 5432
     DATABASE = ''
@@ -175,8 +175,8 @@ class ProductConfig(dict):
 # The edgescale configure
 
 class DevConfig():
-    K8S_HOST = os.getenv("hostIp")
-    K8S_PORT = 7443
+    APPSERVER_HOST = os.getenv("hostIp")
+    APPSERVER_PORT = 7443
     DB_HOST = os.getenv("hostIp")
     DB_PORT = 5432
     DATABASE = 'edgescale'

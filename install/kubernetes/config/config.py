@@ -12,11 +12,11 @@ def connect_sql(config_data,sql,db_tag=""):
         if db_tag != "kong":
             User = db_info.get("pg_user")
             Database = db_info.get("pg_database")
-            Password = db_info.get("pg_pass")
+            Password = db_info.get("pg_passwd")
         else:
             User = db_info.get("kong_user")
             Database = db_info.get("kong_database")
-            Password = db_info.get("kong_pass")
+            Password = db_info.get("kong_passwd")
         connection = psycopg2.connect(
                     user = User,
                     password = Password,

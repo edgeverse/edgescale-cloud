@@ -49,8 +49,8 @@ IS_DEBUG = config["DEBUG"]
 DEVICE_STATUS_TABLE = config['DEVICE_STATUS_TABLE']
 
 # The k8s
-K8S_HOST = config['K8S_HOST']
-K8S_PORT = config['K8S_PORT']
+APPSERVER_HOST = config['APPSERVER_HOST']
+APPSERVER_PORT = config['APPSERVER_PORT']
 
 # The mqtt
 MQTT_HOST = config['MQTT_HOST']
@@ -60,7 +60,7 @@ S3_LOG_URL = config['LOG_URL']
 # redis config
 REDIS_HOST = config['REDIS_HOST']
 REDIS_PORT = config['REDIS_PORT']
-REDIS_PWD = config['REDIS_PWD']
+REDIS_PASSWD = config['REDIS_PASSWD']
 
 engine_url = 'postgresql://{username}:{pwd}@{host}:{port}/{db}'.format(
     username=USER, pwd=PASSWORD, host=DB_HOST, port=DB_PORT, db=DATABASE
@@ -68,4 +68,4 @@ engine_url = 'postgresql://{username}:{pwd}@{host}:{port}/{db}'.format(
 engine = create_engine(engine_url, pool_size=10)
 session.configure(bind=engine)
 
-redis_client = connect_redis(REDIS_HOST, port=REDIS_PORT, pwd=REDIS_PWD)
+redis_client = connect_redis(REDIS_HOST, port=REDIS_PORT, pwd=REDIS_PASSWD)

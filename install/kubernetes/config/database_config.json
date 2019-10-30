@@ -2,16 +2,16 @@
     "settings":{
         "REDIS_PORT":"6379",
         "REDIS_HOST":"redis-external.openfaas-util",
-		"REDIS_PWD":"",
+		"REDIS_PASSWD":"",
 		"REST_API_ID":"j2le",
         "REST_API_SHORT_ID":"j2le",
-        "ADMIN_EMAIL_PWD":"",
+        "ADMIN_EMAIL_PASSWD":"",
         "SMTP_HOST":"",
         "ADMIN_EMAIL":"",
         "SMTP_PORT":"",
         "MQTT_MGMT_USER":"admin",	
         "DEVICE_STATUS_TABLE":"edgescale_device_status",
-        "MQTT_MGMT_PASS":"public",
+        "MQTT_MGMT_PASSWD":"public",
 		"MQTT_URI":"",
         "MQTT_LOCAL_HOST":"http://emqtt-external.openfaas-util:8081",	
         "DEBUG":true,
@@ -19,10 +19,10 @@
         "LOG_URL":"",
 		"API_URI":"",
         "DOCKER_CONTNET_TRUST":"",
-        "S3_HOST":"http://minio-external.openfaas-util:9000",
+        "S3_HOST":"http://s3.edgescale.org:9000",
         "MQTT_HOST":"emqtt-external.openfaas-util",
-		"K8S_PORT":"7443",
-        "K8S_HOST":""
+		"APPSERVER_PORT":"7443",
+        "APPSERVER_HOST":""
     }
 }
 

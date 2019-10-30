@@ -6,7 +6,7 @@ from collections import OrderedDict
 from flask import Blueprint, jsonify, request
 
 from edgescale_pyutils.param_utils import check_json
-from model import SMTP_HOST, SMTP_PORT, ADMIN_EMAIL, ADMIN_EMAIL_PWD
+from model import SMTP_HOST, SMTP_PORT, ADMIN_EMAIL, ADMIN_EMAIL_PASSWD
 from utils import *
 from view.users_views import create_user
 from edgescale_pymodels.ischema import AccountSchema
@@ -188,10 +188,10 @@ def approve_or_reject_account_request(account_id):
             oem_id = request.cursor.fetchone()[0]
             if oem_id:
                 oem_id = bin_to_hex(oem_id)[2:]
-                send_email(SMTP_HOST, SMTP_PORT, ADMIN_EMAIL, ADMIN_EMAIL_PWD, email, subject_html_user,
+                send_email(SMTP_HOST, SMTP_PORT, ADMIN_EMAIL, ADMIN_EMAIL_PASSWD, email, subject_html_user,
                            body_html_oem.format(account=email, password=random_password, oem_id=oem_id))
             else:
-                send_email(SMTP_HOST, SMTP_PORT, ADMIN_EMAIL, ADMIN_EMAIL_PWD, email, subject_html_user,
+                send_email(SMTP_HOST, SMTP_PORT, ADMIN_EMAIL, ADMIN_EMAIL_PASSWD, email, subject_html_user,
                            body_html_user.format(account=email, password=random_password))
             request.conn.commit()
             return jsonify({
@@ -207,7 +207,7 @@ def approve_or_reject_account_request(account_id):
             })
     else:
         # Only send email to user to tell user that he has been rejected.
-        send_email(SMTP_HOST, SMTP_PORT, ADMIN_EMAIL, ADMIN_EMAIL_PWD, email, subject_html_user_reject,
+        send_email(SMTP_HOST, SMTP_PORT, ADMIN_EMAIL, ADMIN_EMAIL_PASSWD, email, subject_html_user_reject,
                    body_html_user_reject)
         return jsonify({
             'status': 'success',

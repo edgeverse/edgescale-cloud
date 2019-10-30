@@ -225,8 +225,8 @@ type ConfigSetting struct {
 	FOREMANBASEURL     string   `json:"FOREMAN_BASE_URL"`
 	HARBORADMINPASS    string   `json:"HARBOR_ADMIN_PASS"`
 	HOSTSITE           string   `json:"HOST_SITE"`
-	K8SPORT            string   `json:"K8S_PORT"`
-	K8SPORTDEV         string   `json:"K8S_PORT_DEV"`
+	K8SPORT            string   `json:"APPSERVER_PORT"`
+	K8SPORTDEV         string   `json:"APPSERVER_PORT_DEV"`
 	K8SPRIVATEHOST     string   `json:"K8S_PRIVATE_HOST"`
 	K8SPUBLICHOST      string   `json:"K8S_PUBLIC_HOST"`
 	K8SPUBLICHOSTDEV   string   `json:"K8S_PUBLIC_HOST_DEV"`
@@ -234,12 +234,12 @@ type ConfigSetting struct {
 	MONGOURI           string   `json:"MONGO_URI"`
 	MQTTHOST           string   `json:"MQTT_HOST"`
 	MQTTLOCALHOST      string   `json:"MQTT_LOCAL_HOST"`
-	MQTTMGMTPASS       string   `json:"MQTT_MGMT_PASS"`
+	MQTTMGMTPASS       string   `json:"MQTT_MGMT_PASSWD"`
 	MQTTMGMTUSER       string   `json:"MQTT_MGMT_USER"`
 	PASSWORD           string   `json:"PASSWORD"`
 	REDISHOST          string   `json:"REDIS_HOST"`
 	REDISPORT          string   `json:"REDIS_PORT"`
-	REDISPWD           string   `json:"REDIS_PWD"`
+	REDISPWD           string   `json:"REDIS_PASSWD"`
 	REDISDB            int      `json:"REDIS_DB"`
 	RESTAPIID          string   `json:"REST_API_ID"`
 	RESTAPISHORTID     string   `json:"REST_API_SHORT_ID"`

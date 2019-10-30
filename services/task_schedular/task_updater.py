@@ -39,8 +39,8 @@ try:
     connection = engine.connect()
     result = connection.execute("select text from config").fetchone()[0]
     config = result.get("settings")
-    K8S_HOST = config['K8S_HOST']
-    K8S_PORT = config['K8S_PORT']
+    APPSERVER_HOST = config['APPSERVER_HOST']
+    APPSERVER_PORT = config['APPSERVER_PORT']
 except Exception as e:
     print("Database connection failed. Error:", str(e))
 finally:
@@ -64,7 +64,7 @@ def get_work():
         while True:
             instanceInfo = instancesQueue.get(timeout=0.1)
             try:
-                instanceInfo.update_status(host=K8S_HOST, port=K8S_PORT)
+                instanceInfo.update_status(host=APPSERVER_HOST, port=APPSERVER_PORT)
                 session.add(instanceInfo)
             except DCCAException as e:
                 session.rollback()

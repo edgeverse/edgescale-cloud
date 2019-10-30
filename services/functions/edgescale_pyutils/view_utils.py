@@ -26,7 +26,7 @@ def get_json(request):
     return request.json or {}
 
 
-def send_email(SMTP_HOST, SMTP_PORT, ADMIN_EMAIL, ADMIN_EMAIL_PWD, recipient, subject_html, body_html):
+def send_email(SMTP_HOST, SMTP_PORT, ADMIN_EMAIL, ADMIN_EMAIL_PASSWD, recipient, subject_html, body_html):
     SENDER = ADMIN_EMAIL
     # The email body for recipients with non-HTML email clients.
     SUBJECT = subject_html
@@ -40,7 +40,7 @@ def send_email(SMTP_HOST, SMTP_PORT, ADMIN_EMAIL, ADMIN_EMAIL_PWD, recipient, su
         server.ehlo()
         server.starttls()
         server.ehlo()
-        server.login(ADMIN_EMAIL, ADMIN_EMAIL_PWD)
+        server.login(ADMIN_EMAIL, ADMIN_EMAIL_PASSWD)
         server.sendmail(ADMIN_EMAIL, recipient, msg.as_string())
         server.quit()
     # Display an error if something goes wrong.
@@ -57,7 +57,7 @@ def send_email(SMTP_HOST, SMTP_PORT, ADMIN_EMAIL, ADMIN_EMAIL_PWD, recipient, su
         }
 
 
-def send_email_reset_pwd(SMTP_HOST, SMTP_PORT, ADMIN_EMAIL, ADMIN_EMAIL_PWD, recipient, token, account, host):
+def send_email_reset_pwd(SMTP_HOST, SMTP_PORT, ADMIN_EMAIL, ADMIN_EMAIL_PASSWD, recipient, token, account, host):
     SUBJECT = "Reset your password"
     BODY_HTML = body_html_rest_password.format(account=account, token=token, time=DEFAULT_MAIL_TOKEN_TIMEOUT_STR,
                                                host=host)
@@ -73,7 +73,7 @@ def send_email_reset_pwd(SMTP_HOST, SMTP_PORT, ADMIN_EMAIL, ADMIN_EMAIL_PWD, rec
         server.ehlo()
         server.starttls()
         server.ehlo()
-        server.login(ADMIN_EMAIL, ADMIN_EMAIL_PWD)
+        server.login(ADMIN_EMAIL, ADMIN_EMAIL_PASSWD)
         server.sendmail(ADMIN_EMAIL, recipient, msg.as_string())
         server.quit()
     except Exception as e:

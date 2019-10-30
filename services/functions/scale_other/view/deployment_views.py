@@ -9,7 +9,7 @@ from edgescale_pyutils.exception_utils import DCCAException
 from edgescale_pyutils.param_utils import validate_resource, validate_envrionment, check_json
 from edgescale_pyutils.redis_utils import connect_redis
 from edgescale_pyutils.view_utils import get_oemid, get_json
-from model import K8S_PORT, _DNS, REDIS_HOST, REDIS_PORT, REDIS_PWD, SHORT_REST_API_ID
+from model import APPSERVER_PORT, _DNS, REDIS_HOST, REDIS_PORT, REDIS_PASSWD, SHORT_REST_API_ID
 from model.constants import *
 from utils import *
 
@@ -29,7 +29,7 @@ def query_all_user_k8s_pods():
         'limit': request.args.get('limit', 0),
         'offset': request.args.get('offset', 0)
     }
-    result = query_k8s_pods(request.cursor, RESOURCE_GET_STATUS.format(dns=_DNS, port=K8S_PORT, uid=uid), uid, params=params)
+    result = query_k8s_pods(request.cursor, RESOURCE_GET_STATUS.format(dns=_DNS, port=APPSERVER_PORT, uid=uid), uid, params=params)
     return jsonify(result)
 
 
@@ -101,14 +101,14 @@ def deploy_app_container():
                 'message': 'Not authorized device exist'
             })
 
-    if check_exceed_max_limit(request.cursor, uid, RESOURCE_GET_STATUS.format(dns=_DNS, port=K8S_PORT, uid=uid))['exceed_max']:
+    if check_exceed_max_limit(request.cursor, uid, RESOURCE_GET_STATUS.format(dns=_DNS, port=APPSERVER_PORT, uid=uid))['exceed_max']:
         return jsonify({
             'status': 'fail',
             'message': 'Cannot deploy, you have exceeded the maxinum number that can deploy'
         })
 
     # Check if exceed the max install limit of per-time
-    client = connect_redis(REDIS_HOST, port=REDIS_PORT, pwd=REDIS_PWD)
+    client = connect_redis(REDIS_HOST, port=REDIS_PORT, pwd=REDIS_PASSWD)
     result = check_exceed_per_time_max_limit(request.cursor, client, user_id=uid,
                                              limit_type_id=LIMIT_TYPE_ID_MAX_PER_SEC_INSTALL,
                                              res_key=DEPLOY_APP_KEY_INSTALL)
@@ -250,7 +250,7 @@ def deploy_app_container():
         else:
             tpl = _template(False)
 
-        resp = requests.post(RESOURCE_DEPLOY_APP.format(dns=_DNS, port=K8S_PORT, uid=uid),
+        resp = requests.post(RESOURCE_DEPLOY_APP.format(dns=_DNS, port=APPSERVER_PORT, uid=uid),
                              data=tpl, cert=certs, headers=headers, verify=False, timeout=7)
 
         raw_k8s_result = resp.content.decode("utf-8")
@@ -272,7 +272,7 @@ def deploy_app_container():
             }
             request.cursor.execute(create_deploy_record_sql, (json.dumps(event), tpl, raw_k8s_result,
                                                               json.dumps(parsed_k8s_result),
-                                                              RESOURCE_DEPLOY_APP.format(dns=_DNS, port=K8S_PORT, uid=uid),
+                                                              RESOURCE_DEPLOY_APP.format(dns=_DNS, port=APPSERVER_PORT, uid=uid),
                                                               task_id, device_id))
         except Exception:
             import traceback
@@ -300,7 +300,7 @@ def remove_app_by_names():
     check_json(request)
     app_name_list = get_json(request).get('names', [])
 
-    client = connect_redis(REDIS_HOST, port=REDIS_PORT, pwd=REDIS_PWD)
+    client = connect_redis(REDIS_HOST, port=REDIS_PORT, pwd=REDIS_PASSWD)
     result = check_exceed_per_time_max_limit(request.cursor, client, user_id=uid,
                                              limit_type_id=LIMIT_TYPE_ID_MAX_PER_SEC_UNINSTALL,
                                              res_key=DEPLOY_APP_KEY_UNINSTALL)
@@ -317,7 +317,7 @@ def remove_app_by_names():
         }
 
         data = '{"kind":"DeleteOptions", "apiVersion":"v1", "gracePeriodSeconds":0}'
-        resource = RESOURCE_DELETE_APP_V2.format(dns=_DNS, port=K8S_PORT, uid=uid, app_name=app_name)
+        resource = RESOURCE_DELETE_APP_V2.format(dns=_DNS, port=APPSERVER_PORT, uid=uid, app_name=app_name)
         resp = requests.delete(resource, data=data, cert=certs, headers=headers, verify=False, timeout=7)
         results.append(json.loads(resp.content))
 
@@ -366,7 +366,7 @@ def get_app_conlog(app_name):
         'Accept': '*/*'
     }
 
-    res = RESOURCE_GET_APP_CONLOG.format(dns=_DNS, port=K8S_PORT, uid=uid, app_name=app_name)
+    res = RESOURCE_GET_APP_CONLOG.format(dns=_DNS, port=APPSERVER_PORT, uid=uid, app_name=app_name)
     resp = requests.get(res, headers=headers, cert=certs, verify=False, timeout=10)
     if resp.status_code > 210:
         raise DCCAException("app response error: %s" % resp.status_code)
@@ -385,7 +385,7 @@ def get_app_eventlog(app_name):
         'Accept': '*/*'
     }
 
-    res = RESOURCE_GET_APP_EVENT.format(dns=_DNS, port=K8S_PORT, uid=uid, app_name=app_name)
+    res = RESOURCE_GET_APP_EVENT.format(dns=_DNS, port=APPSERVER_PORT, uid=uid, app_name=app_name)
     resp = requests.get(res, headers=headers, cert=certs, verify=False, timeout=10)
     if resp.status_code > 210:
         raise DCCAException("app response error: %s" % resp.status_code)
@@ -404,6 +404,6 @@ def reboot_app(app_name):
         'Accept': '*/*'
     }
 
-    res = RESOURCE_POST_APP_REBOOT.format(dns=_DNS, port=K8S_PORT, uid=uid, app_name=app_name)
+    res = RESOURCE_POST_APP_REBOOT.format(dns=_DNS, port=APPSERVER_PORT, uid=uid, app_name=app_name)
     resp = requests.post(res, headers=headers, cert=certs, verify=False, timeout=10)
     return jsonify(k8s_filter(resp.content))

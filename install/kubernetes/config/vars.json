@@ -2,36 +2,34 @@
     "env":{
         "domain_name":"",
         "harbor_user":"",
-        "harbor_pass":"",
+        "harbor_passwd":"",
         "harbor_domain":"",
-        "harbor_respo_subdir":"",
-        "harbor_ip_address":"",
-        "faas_pass":"",
+        "harbor_project_name":"",
+        "harbor_host_ip":"",
+        "faas_passwd":"",
         "faas_user":""
     },
-   "service":{
-		"REDIS_PWD":"",
-		"ADMIN_EMAIL_PWD":"",
-		"SMTP_HOST":"",
-		"ADMIN_EMAIL":"",
-		"SMTP_PORT":"",
-		"MQTT_URI":"",
-		"HOST_SITE":"",
-		"LOG_URL":"",
-		"API_URI":"",
-		"DOCKER_CONTNET_TRUST":"",
-		"K8S_HOST":""
-   },
+    "service":{
+        "REDIS_PASSWD":"",
+        "ADMIN_EMAIL_PASSWD":"",
+        "SMTP_HOST":"",
+        "ADMIN_EMAIL":"",
+        "SMTP_PORT":"",
+        "MQTT_URI":"",
+        "HOST_SITE":"",
+        "LOG_URL":"",
+        "API_URI":"",
+        "DOCKER_CONTNET_TRUST":"",
+        "APPSERVER_HOST":""
+    },
     "db":{
-        "pg_pass":"",
+        "pg_passwd":"",
         "pg_user":"",
         "pg_database":"",
         "pg_host":"",
-        "pg_es_pass":"",
-        "mongo_user":"",
-        "mongo_pass":"",
+        "pg_es_passwd":"",
         "kong_user":"",
-        "kong_pass":"",
+        "kong_passwd":"",
         "kong_database":"",
         "pg_max_connections":1000
     },
@@ -44,4 +42,3 @@
         "key_path":"/install/kubernetes/resource/sslcert/edgescale.key"
     }
 }
-

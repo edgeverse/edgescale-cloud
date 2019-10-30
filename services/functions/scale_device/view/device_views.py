@@ -23,7 +23,7 @@ from edgescale_pyutils.view_utils import get_oemid, get_json
 from edgescale_pyutils.common_utils import format_time
 from edgescale_pyutils.param_utils import empty_check, check_json
 from model import IS_DEBUG, SHORT_REST_API_ID, MQTT_HOST, S3_LOG_URL, DEVICE_TABLE, MQTT_LOCAL_HOST, \
-    MQTT_MGMT_PASS, MQTT_MGMT_USER, REDIS_KEY_CREATE_DEVICE_FORMAT, API_URI, MQTT_URI, docker_content_trust_server
+    MQTT_MGMT_PASSWD, MQTT_MGMT_USER, REDIS_KEY_CREATE_DEVICE_FORMAT, API_URI, MQTT_URI, docker_content_trust_server
 from model import session
 from utils import *
 
@@ -706,7 +706,7 @@ def execute_operation():
             "client_id": "iot-hub-lambda"
         }
         requests.post(MQTT_LOCAL_HOST + "/api/v3/mqtt/publish", data=json.dumps(cc),
-                      auth=(MQTT_MGMT_USER, MQTT_MGMT_PASS))
+                      auth=(MQTT_MGMT_USER, MQTT_MGMT_PASSWD))
         return jsonify({"status": 'success', "message": "operation successfully"})
     except ClientError as e:
         return jsonify({"error": e.response['Error']['Message']})

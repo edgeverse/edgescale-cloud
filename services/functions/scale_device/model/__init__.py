@@ -48,15 +48,15 @@ HOST_SITE = config['HOST_SITE']
 IS_DEBUG = config["DEBUG"]
 
 # The k8s
-K8S_HOST = config['K8S_HOST']
-K8S_PORT = config['K8S_PORT']
+APPSERVER_HOST = config['APPSERVER_HOST']
+APPSERVER_PORT = config['APPSERVER_PORT']
 
 DEVICE_TABLE = config.get('ENROLL_DEVICE_TABLE', 'edgescale-devices-dev')
 
 # The mqtt
 MQTT_LOCAL_HOST = config['MQTT_LOCAL_HOST']
 MQTT_MGMT_USER = config['MQTT_MGMT_USER']
-MQTT_MGMT_PASS = config['MQTT_MGMT_PASS']
+MQTT_MGMT_PASSWD = config['MQTT_MGMT_PASSWD']
 MQTT_HOST = config['MQTT_HOST']
 
 S3_LOG_URL = config['LOG_URL']
@@ -69,7 +69,7 @@ device_status_table = config['DEVICE_STATUS_TABLE']
 
 REDIS_HOST = config['REDIS_HOST']
 REDIS_PORT = config['REDIS_PORT']
-REDIS_PWD = config['REDIS_PWD']
+REDIS_PASSWD = config['REDIS_PASSWD']
 REST_API_ID = config['REST_API_ID']
 SHORT_REST_API_ID = config['REST_API_SHORT_ID']
 REDIS_KEY_CREATE_DEVICE_FORMAT = '{rest_api_id}:{user_id}:{datetime}:cd'
@@ -81,4 +81,4 @@ engine_url = 'postgresql://{username}:{pwd}@{host}:{port}/{db}'.format(
 engine = create_engine(engine_url, pool_size=10)
 session.configure(bind=engine)
 
-redis_client = connect_redis(REDIS_HOST, port=REDIS_PORT, pwd=REDIS_PWD)
+redis_client = connect_redis(REDIS_HOST, port=REDIS_PORT, pwd=REDIS_PASSWD)

@@ -46,7 +46,7 @@ HOST_SITE = config['HOST_SITE']
 SMTP_HOST = config['SMTP_HOST']
 SMTP_PORT = config['SMTP_PORT']
 ADMIN_EMAIL = config['ADMIN_EMAIL']
-ADMIN_EMAIL_PWD = config['ADMIN_EMAIL_PWD']
+ADMIN_EMAIL_PASSWD = config['ADMIN_EMAIL_PASSWD']
 IS_DEBUG = config["DEBUG"]
 
 engine_url = 'postgresql://{username}:{pwd}@{host}:{port}/{db}'.format(

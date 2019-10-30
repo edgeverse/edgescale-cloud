@@ -10,7 +10,7 @@ from edgescale_pyutils.exception_utils import DCCAException
 from edgescale_pyutils.model_utils import ctx
 from edgescale_pyutils.view_utils import get_oemid, get_json
 from edgescale_pyutils.param_utils import validate_resource, validate_envrionment, check_json, check_tag_name
-from model import session, K8S_HOST, K8S_PORT
+from model import session, APPSERVER_HOST, APPSERVER_PORT
 from utils import *
 from model import IS_DEBUG
 from model.ischema import *
@@ -930,7 +930,7 @@ def query_app_statistics():
     }
 
     ctx.current_user = DccaUser.get_by_id(uid)
-    return jsonify(DccaApplication.get_app_statistics(K8S_HOST, K8S_PORT, params))
+    return jsonify(DccaApplication.get_app_statistics(APPSERVER_HOST, APPSERVER_PORT, params))
 
 
 @app_bp.route("/store", methods=["GET"])

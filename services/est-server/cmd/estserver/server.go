@@ -35,6 +35,9 @@ func (cfg *Config) BasicAuth(r *http.Request) bool {
 	}
 
 	c := requests.New()
+	c.TLSConfig = &tls.Config{
+		InsecureSkipVerify: true,
+	}
 	c.Header.Add("dcca_token", cfg.ESToken)
 	auth = strings.Split(string(s), ":")
 	var body = map[string]interface{}{"device_id": auth[0], "token": auth[1]}

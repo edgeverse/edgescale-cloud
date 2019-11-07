@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/csv"
@@ -143,6 +144,9 @@ func DeviceBatchCreateHandle(c *gin.Context) {
 		}
 		rb := map[string]interface{}{"names": devNames, "user_id": GetUserID(c), "model_id": dev.ModelID, "customer_id": p.CustomerID}
 		r := requests.New()
+		r.TLSConfig = &tls.Config{
+			InsecureSkipVerify: true,
+		}
 		r.Header.Add("dcca_token", esconf.Mft.ESToken)
 		r.Post(fmt.Sprintf("%s/devices/register", esconf.API), rb)
 		result, _ := r.Json()

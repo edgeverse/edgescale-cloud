@@ -1,4 +1,5 @@
-api: https://api.edgescale.org/v1
+api: https://kong-external.openfaas-util:8443/v1
+estapi: https://e-est-external.openfaas-uti:10443/v1
 esdb:
         dbHost: postgres-external.openfaas-util
         dbUser: root
@@ -9,4 +10,4 @@ mft:
         dbUser: root
         dbPass: edgescale 
         dbName: edgescale_mft
-        esToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImIyNTMzMiIsImFkbWluIjoxLCJ1aWQiOjQ4LCJleHAiOjE1NTM4NDc2NzAsImFjY291bnRfdHlwZV9pZCI6Mn0.OnoV8wsiUeQz_M6BBr_Lfm299tFQKIeVJL3S8iTsPrI
+        esToken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjQ3MjI1NzI1OTIsInVpZCI6NCwidXNlcm5hbWUiOiJvZW1fdGVzdCIsImFkbWluIjowLCJhY2NvdW50X3R5cGVfaWQiOjJ9.3npoWX1mC8IdvZUML_gxGPAQ-3MVSS7bTArhJLEHlds 

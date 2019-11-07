@@ -288,37 +288,43 @@ function Prepare_edgescale_env(){
     Set_harborinfo_into_yaml
 
     mkdir -p /etc/edgescale/etc/b-est/ca
-    cp $basepath/install/kubernetes/j2_conf/b-est.conf.j2 /etc/edgescale/etc/b-est/config.yaml
-    cp $basepath/install/kubernetes/j2_conf/b-est-rootca.crt.j2 /etc/edgescale/etc/b-est/ca/RootCA.crt
-    cp $basepath/install/kubernetes/j2_conf/b-est-rootca.key.j2 /etc/edgescale/etc/b-est/ca/RootCA.key
-    cp $basepath/install/kubernetes/j2_conf/b-est.crt.j2 /etc/edgescale/etc/b-est/est.crt
-    cp $basepath/install/kubernetes/j2_conf/b-est.key.j2 /etc/edgescale/etc/b-est/est.key
-    cp $basepath/install/kubernetes/j2_conf/b-est.trust.crt.j2 /etc/edgescale/etc/b-est/trustca.crt
+    cp $basepath/install/kubernetes/j2_conf/b-est/b-est.conf.j2 /etc/edgescale/etc/b-est/config.yaml
+    sed -i "s/{{ domain_name }}/$DOMAIN_NAME/g" /etc/edgescale/etc/b-est/config.yaml 
+    cp $basepath/install/kubernetes/j2_conf/b-est/b-est-rootca.crt.j2 /etc/edgescale/etc/b-est/ca/RootCA.crt
+    cp $basepath/install/kubernetes/j2_conf/b-est/b-est-rootca.key.j2 /etc/edgescale/etc/b-est/ca/RootCA.key
+    cp $basepath/install/kubernetes/j2_conf/b-est/b-est.crt.j2 /etc/edgescale/etc/b-est/est.crt
+    cp $basepath/install/kubernetes/j2_conf/b-est/b-est.key.j2 /etc/edgescale/etc/b-est/est.key
+    cp $basepath/install/kubernetes/j2_conf/b-est/b-est.trust.crt.j2 /etc/edgescale/etc/b-est/trustca.crt
 
     mkdir -p /etc/edgescale/etc/e-est/ca
-    cp $basepath/install/kubernetes/j2_conf/e-est.conf.j2 /etc/edgescale/etc/e-est/config.yaml
-    cp $basepath/install/kubernetes/j2_conf/e-est-rootca.crt.j2 /etc/edgescale/etc/e-est/ca/RootCA.crt
-    cp $basepath/install/kubernetes/j2_conf/e-est-rootca.key.j2 /etc/edgescale/etc/e-est/ca/RootCA.key
-    cp $basepath/install/kubernetes/j2_conf/e-est.crt.j2 /etc/edgescale/etc/e-est/est.crt
-    cp $basepath/install/kubernetes/j2_conf/e-est.key.j2 /etc/edgescale/etc/e-est/est.key
-    cp $basepath/install/kubernetes/j2_conf/e-est.trust.crt.j2 /etc/edgescale/etc/e-est/trustca.crt
+    cp $basepath/install/kubernetes/j2_conf/e-est/e-est.conf.j2 /etc/edgescale/etc/e-est/config.yaml
+    sed -i "s/{{ domain_name }}/$DOMAIN_NAME/g" /etc/edgescale/etc/e-est/config.yaml 
+    cp $basepath/install/kubernetes/j2_conf/e-est/e-est-rootca.crt.j2 /etc/edgescale/etc/e-est/ca/RootCA.crt
+    cp $basepath/install/kubernetes/j2_conf/e-est/e-est-rootca.key.j2 /etc/edgescale/etc/e-est/ca/RootCA.key
+    cp $basepath/install/kubernetes/j2_conf/e-est/e-est.crt.j2 /etc/edgescale/etc/e-est/est.crt
+    cp $basepath/install/kubernetes/j2_conf/e-est/e-est.key.j2 /etc/edgescale/etc/e-est/est.key
+    cp $basepath/install/kubernetes/j2_conf/e-est/e-est.trust.crt.j2 /etc/edgescale/etc/e-est/trustca.crt
 
     mkdir -p /etc/edgescale/etc/emqttd/certs
-    cp $basepath/install/kubernetes/j2_conf/emq.conf.j2 /etc/edgescale/etc/emqttd/emq.conf
-    cp $basepath/install/kubernetes/j2_conf/emq_ssl.conf.j2 /etc/edgescale/etc/emqttd/ssl_dist.conf
-    cp $basepath/install/kubernetes/j2_conf/emq_acl.conf.j2 /etc/edgescale/etc/emqttd/acl.conf
-    cp $basepath/install/kubernetes/j2_conf/emq_cert.j2 /etc/edgescale/etc/emqttd/certs/cert.pem
-    cp $basepath/install/kubernetes/j2_conf/emq_key.j2 /etc/edgescale/etc/emqttd/certs/key.pem
+    cp $basepath/install/kubernetes/j2_conf/emqtt/emq.conf.j2 /etc/edgescale/etc/emqttd/emq.conf
+    cp $basepath/install/kubernetes/j2_conf/emqtt/emq_ssl.conf.j2 /etc/edgescale/etc/emqttd/ssl_dist.conf
+    cp $basepath/install/kubernetes/j2_conf/emqtt/emq_acl.conf.j2 /etc/edgescale/etc/emqttd/acl.conf
+    cp $basepath/install/kubernetes/j2_conf/emqtt/emq_cert.j2 /etc/edgescale/etc/emqttd/certs/cert.pem
+    cp $basepath/install/kubernetes/j2_conf/emqtt/emq_key.j2 /etc/edgescale/etc/emqttd/certs/key.pem
+
+
+    mkdir -p /etc/edgescale/etc/mft
+    cp $basepath/install/kubernetes/j2_conf/mft/mft.conf.j2 /etc/edgescale/etc/mft/config.yml
 
     mkdir -p /etc/edgescale/etc/haproxy/log
-    cp $basepath/install/kubernetes/j2_conf/haproxy.conf.j2 /etc/edgescale/etc/haproxy/haproxy.cfg
+    cp $basepath/install/kubernetes/j2_conf/haproxy/haproxy.conf.j2 /etc/edgescale/etc/haproxy/haproxy.cfg
     sed -i "s/{{ master_ip }}/$LocalIP/g" /etc/edgescale/etc/haproxy/haproxy.cfg
     #change the domain_name
     sed -i "s/{{ domain_name }}/$DOMAIN_NAME/g" /etc/edgescale/etc/haproxy/haproxy.cfg
 
     mkdir -p /etc/edgescale/etc/named
-    cp $basepath/install/kubernetes/j2_conf/named.conf.j2 /etc/edgescale/etc/named/named.conf
-    cp $basepath/install/kubernetes/j2_conf/named.edgescale.zone.j2 /etc/edgescale/etc/named/edgescale.zone
+    cp $basepath/install/kubernetes/j2_conf/named/named.conf.j2 /etc/edgescale/etc/named/named.conf
+    cp $basepath/install/kubernetes/j2_conf/named/named.edgescale.zone.j2 /etc/edgescale/etc/named/edgescale.zone
     sed -i "s/{{master_ip}}/$LocalIP/g" /etc/edgescale/etc/named/named.conf
     sed -i "s/{{ domain_name }}/$DOMAIN_NAME/g" /etc/edgescale/etc/named/named.conf
     sed -i "s/{{ master_ip }}/$LocalIP/g" /etc/edgescale/etc/named/edgescale.zone
@@ -326,10 +332,10 @@ function Prepare_edgescale_env(){
 
     mkdir -p /var/edgescale/nginx/www
     mkdir -p /etc/edgescale/etc/nginx/ssl
-    cp $basepath/install/kubernetes/j2_conf/nginx.conf.j2 /etc/edgescale/etc/nginx/nginx.conf
+    cp $basepath/install/kubernetes/j2_conf/nginx/nginx.conf.j2 /etc/edgescale/etc/nginx/nginx.conf
     sed -i "s/{{ domain_name }}/$DOMAIN_NAME/g" /etc/edgescale/etc/nginx/nginx.conf
-    cp $basepath$SSL_CERT /etc/edgescale/etc/nginx/ssl/edgescale.crt
-    cp $basepath$SSL_KEY /etc/edgescale/etc/nginx/ssl/edgescale.key
+    cp $basepath/install/kubernetes/j2_conf/nginx/nginx.crt /etc/edgescale/etc/nginx/ssl/edgescale.crt
+    cp $basepath/install/kubernetes/j2_conf/nginx/nginx.key /etc/edgescale/etc/nginx/ssl/edgescale.key
     cp $basepath/install/kubernetes/resource/dashboard.zip /tmp/dashboard.zip
     if ! unzip -n /tmp/dashboard.zip -d /var/edgescale/nginx/www &> /dev/null
     then
@@ -338,7 +344,7 @@ function Prepare_edgescale_env(){
     fi
 
     mkdir -p /etc/edgescale/etc/redis/
-    cp $basepath/install/kubernetes/j2_conf/redis.conf.j2 /etc/edgescale/etc/redis/redis.conf
+    cp $basepath/install/kubernetes/j2_conf/redis/redis.conf.j2 /etc/edgescale/etc/redis/redis.conf
     sed -i "s/{{ db.redis_pass }}/$REDIS_PASSWORD/g" /etc/edgescale/etc/redis/redis.conf
 
     sed -i "s/postgres_password/$POSTGRES_PASSWD/g" $basepath/install/kubernetes/kube_edgescale_yaml/phase-1/redis.yaml
@@ -361,8 +367,8 @@ function Prepare_edgescale_env(){
 function Start_edgescale_inbox(){
     rm -rf /etc/edgescale/kong
     cp -r $basepath/kong /etc/edgescale/
-    cp -r $basepath$SSL_CERT /etc/edgescale/kong 
-    cp -r $basepath$SSL_KEY /etc/edgescale/kong 
+    cp -r $basepath/install/kubernetes/j2_conf/kong/edgescale.crt /etc/edgescale/kong 
+    cp -r $basepath/install/kubernetes/j2_conf/kong/edgescale.key /etc/edgescale/kong 
 }
 
 function Start_edgescale(){

@@ -1,0 +1,16 @@
+---
+es_api: https://kong-external.openfaas-util:8443/v1
+es_token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjQ3MjI1NzI1OTIsInVpZCI6NCwidXNlcm5hbWUiOiJvZW1fdGVzdCIsImFkbWluIjowLCJhY2NvdW50X3R5cGVfaWQiOjJ9.3npoWX1mC8IdvZUML_gxGPAQ-3MVSS7bTArhJLEHlds 
+addr: :443
+certfile: /etc/est/est.crt
+keyfile: /etc/est/est.key
+trustcafile: /etc/est/trustca.crt
+default_days: 365
+
+rootca:
+  certfile: /etc/est/ca/RootCA.crt
+  keyfile: /etc/est/ca/RootCA.key
+
+ocsp_server:
+  - https://e-est-external.openfaas-util:10443/.well-known/ocsp
+

@@ -18,5 +18,12 @@ spec:
       - name:  mft
         image: HARBOR_URL/HARBOR_REPO_SUB_DIR/mft
         imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: /etc/mft
+          name: mft-volume
+      volumes:
+      - name: mft-volume
+        hostPath:
+          path: /etc/edgescale/etc/mft 
       imagePullSecrets:
         - name: kube-repos

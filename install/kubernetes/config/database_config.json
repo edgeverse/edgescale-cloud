@@ -19,7 +19,7 @@
         "LOG_URL":"",
 		"API_URI":"",
         "DOCKER_CONTNET_TRUST":"",
-        "S3_HOST":"http://s3.edgescale.org:9000",
+        "S3_HOST":"http://s3.edgescale.demo:9000",
         "MQTT_HOST":"emqtt-external.openfaas-util",
 		"APPSERVER_PORT":"7443",
         "APPSERVER_HOST":""

@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name:  task-schedular
-        image: pcloud.edgescale.org/pcloud/task_schedular
+        image: pcloud.edgescale.org/demo/task_schedular
         imagePullPolicy: Always
         env:
         - name: DB_HOST

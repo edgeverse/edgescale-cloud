@@ -19,7 +19,7 @@ spec:
         resources:
           requests:
             memory: "120Mi"
-        image: pcloud.edgescale.org/pcloud/minio-api 
+        image: pcloud.edgescale.org/demo/minio-api 
         imagePullPolicy: Always
         env:
         - name: accessKeyID
@@ -27,7 +27,7 @@ spec:
         - name: secretAccessKey 
           value: isdEDegDFfsdfSDjsdlsdfDAO+k
         - name: hostIp
-          value: 127.0.0.1
+          value: 10.192.208.195
         ports:
         - containerPort: 10086
           hostPort: 10086

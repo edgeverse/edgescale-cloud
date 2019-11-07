@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name:  kong
-        image: pcloud.edgescale.org/pcloud/kong
+        image: pcloud.edgescale.org/demo/kong
         imagePullPolicy: Always
         volumeMounts:
         - mountPath: /home

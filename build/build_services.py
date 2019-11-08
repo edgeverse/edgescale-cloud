@@ -7,9 +7,11 @@ import shutil
 import sys
 import json
 
+
 def command(cmd):
     if os.system(cmd) != 0:
         return "error" 
+
 
 def build_function(rootPath, function_name, docker_repo, docker_sub_dir):
   template_path = os.path.join(rootPath, "build/openfaas_template")
@@ -30,7 +32,8 @@ def build_function(rootPath, function_name, docker_repo, docker_sub_dir):
                       os.path.join(path, "edgescale_pymodels"))
       shutil.copytree(os.path.join(function_path, "edgescale_pyutils"),
                       os.path.join(path, "edgescale_pyutils"))
-      command("faas build {} -f {}.yml".format(generate_build_args(), function_name))
+      if command("faas build {} -f {}.yml".format(generate_build_args(), function_name)) == "error":
+          return "error"
       shutil.rmtree(path)
       shutil.rmtree(os.path.join(template_path, "build"))
       os.remove("{}.yml".format(function_name))
@@ -58,18 +61,21 @@ def build_service(service_path, service_name, docker_repo, docker_sub_dir, tag="
   build_args = generate_build_args()
   if service_name == "kong":
     os.chdir(os.path.split(os.path.split(service_path)[0])[0])
-    command("docker build %s -t %s:%s -f %s ." % (build_args, service_name, tag,
-        os.path.join(service_path, "Dockerfile")))
+    if command("docker build %s -t %s:%s -f %s ." % (build_args, service_name, tag,
+        os.path.join(service_path, "Dockerfile"))) == "error":
+        return "error"
   else:
     os.chdir(service_path)
     if os.path.exists(os.path.join(service_path, "Makefile")):
       command("make")
       os.chdir(os.path.join(service_path, "build"))
-      command("docker build %s -t %s:%s ." % (build_args, service_name, tag))
+      if command("docker build %s -t %s:%s ." % (build_args, service_name, tag)) == "error":
+          return "error"
       os.chdir(service_path)
       command("make clean")
     else:
-          command("docker build %s -t %s:%s ." % (build_args, service_name, tag))
+        if command("docker build %s -t %s:%s ." % (build_args, service_name, tag)) == "error":
+            return "error"
   command("docker tag {0}:{1} {2}/{3}/{0}:{1} ".format(service_name, tag, docker_repo, docker_sub_dir))
   command("docker push {0}/{1}/{2}:{3} ".format(docker_repo, docker_sub_dir, service_name, tag))
 
@@ -96,6 +102,7 @@ def main(tag="latest"):
     # build function docker images
     if build_function(rootPath, function_name, docker_repo, docker_sub_dir) == "error":
         failed_list.append(function_name)
+        continue
     success_number += 1
   # find all the paths need to build based on dockerfile
   serviceBase_path = os.path.join(rootPath, "services")
@@ -104,6 +111,7 @@ def main(tag="latest"):
     service_path = os.path.join(serviceBase_path, name)
     if build_service(service_path, name, docker_repo, docker_sub_dir, tag) == "error":
         failed_list.append(name)
+        continue 
     success_number += 1
   print("Build summary: success : {0}, failed_number : {1}, failed_name : {2}.".format(success_number, len(failed_list), failed_list))
 

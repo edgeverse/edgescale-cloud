@@ -1,19 +1,19 @@
 {
     "env":{
         "domain_name":"edgescale.demo",
-        "harbor_user":"admin",
-        "harbor_passwd":"Harbor12345",
-        "harbor_domain":"pcloud.edgescale.org",
-        "harbor_project_name":"demo",
-        "harbor_host_ip":"10.193.20.178",
         "faas_passwd":"edgescale",
-        "faas_user":"admin"
+        "faas_user":"admin",
+        "harbor_user":"",
+        "harbor_passwd":"",
+        "harbor_domain":"",
+        "harbor_project_name":"",
+        "harbor_host_ip":""
     },
     "service":{
-        "ADMIN_EMAIL_PASSWD":"HAppy2019",
-        "SMTP_HOST":"smtp.office365.com",
-        "ADMIN_EMAIL":"liubin.gong@nxp.com",
-        "SMTP_PORT":"587"
+        "ADMIN_EMAIL_PASSWD":"",
+        "SMTP_HOST":"",
+        "ADMIN_EMAIL":"",
+        "SMTP_PORT":""
     },
     "db":{
         "redis_passwd":"edgescale",

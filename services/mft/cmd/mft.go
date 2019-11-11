@@ -10,6 +10,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/hex"
@@ -539,6 +540,9 @@ func MftCreateDeviceHandler(c *gin.Context) {
 		rb := map[string]interface{}{"names": []string{dev_name}, "user_id": OemGetUserID(p.OemID), "model_id": dev.ModelID, "customer_id": p.CustomerID}
 		fmt.Printf("%v", rb)
 		r := requests.New()
+		r.TLSConfig = &tls.Config{
+			InsecureSkipVerify: true,
+		}
 		r.Header.Add("dcca_token", esconf.Mft.ESToken)
 		r.Post(fmt.Sprintf("%s/devices/register", esconf.API), rb)
 		result, _ := r.Json()

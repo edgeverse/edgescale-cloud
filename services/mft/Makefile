@@ -8,7 +8,7 @@ All:
 	go get github.com/lib/pq
 	go get github.com/google/uuid 
 	go get github.com/eclipse/paho.mqtt.golang 
-	cd ./cmd &&go build --tags aws --ldflags="-w -s" -o ../build/lambda_handler
+	cd ./cmd &&go build --tags aws --ldflags="-w -s"  -o ../build/lambda_handler
 
 clean:
 	rm build/lambda_handler 

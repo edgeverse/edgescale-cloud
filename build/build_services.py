@@ -8,6 +8,11 @@ import sys
 import json
 
 
+def command(cmd):
+    if os.system(cmd) != 0:
+        return "error" 
+
+
 def build_function(rootPath, function_name, docker_repo, docker_sub_dir):
   template_path = os.path.join(rootPath, "build/openfaas_template")
   os.chdir(template_path)
@@ -16,7 +21,7 @@ def build_function(rootPath, function_name, docker_repo, docker_sub_dir):
       install_code = os.system("curl -sSL https://cli.openfaas.com | sudo sh")
       if install_code != 0:
         raise Exception("failed to intall openfaas cli, please check your network.")
-    os.system("faas new --lang=python3-es {}".format(function_name))
+    command("faas new --lang=python3-es {}".format(function_name))
     path = os.path.join(template_path, function_name)
     if os.path.exists(path):
       shutil.rmtree(path)
@@ -27,13 +32,13 @@ def build_function(rootPath, function_name, docker_repo, docker_sub_dir):
                       os.path.join(path, "edgescale_pymodels"))
       shutil.copytree(os.path.join(function_path, "edgescale_pyutils"),
                       os.path.join(path, "edgescale_pyutils"))
-      os.system("faas build {} -f {}.yml".format(generate_build_args(), function_name))
-      print("-------build service {} complete-------".format(function_name))
+      if command("faas build {} -f {}.yml".format(generate_build_args(), function_name)) == "error":
+          return "error"
       shutil.rmtree(path)
       shutil.rmtree(os.path.join(template_path, "build"))
       os.remove("{}.yml".format(function_name))
-      os.system("docker tag {0}:latest {1}/{2}/{0} ".format(function_name, docker_repo, docker_sub_dir))
-      os.system("docker push {0}/{1}/{2} ".format(docker_repo, docker_sub_dir, function_name))
+      command("docker tag {0}:latest {1}/{2}/{0} ".format(function_name, docker_repo, docker_sub_dir))
+      command("docker push {0}/{1}/{2} ".format(docker_repo, docker_sub_dir, function_name))
     else:
       raise Exception("Failed to build function")
   except Exception as e:
@@ -56,21 +61,23 @@ def build_service(service_path, service_name, docker_repo, docker_sub_dir, tag="
   build_args = generate_build_args()
   if service_name == "kong":
     os.chdir(os.path.split(os.path.split(service_path)[0])[0])
-    os.system("docker build %s -t %s:%s -f %s ." % (build_args, service_name, tag,
-                                                    os.path.join(service_path, "Dockerfile")))
+    if command("docker build %s -t %s:%s -f %s ." % (build_args, service_name, tag,
+        os.path.join(service_path, "Dockerfile"))) == "error":
+        return "error"
   else:
     os.chdir(service_path)
     if os.path.exists(os.path.join(service_path, "Makefile")):
-      os.system("make")
+      command("make")
       os.chdir(os.path.join(service_path, "build"))
-      os.system("docker build %s -t %s:%s ." % (build_args, service_name, tag))
+      if command("docker build %s -t %s:%s ." % (build_args, service_name, tag)) == "error":
+          return "error"
       os.chdir(service_path)
-      os.system("make clean")
+      command("make clean")
     else:
-      os.system("docker build %s -t %s:%s ." % (build_args, service_name, tag))
-  os.system("docker tag {0}:{1} {2}/{3}/{0}:{1} ".format(service_name, tag, docker_repo, docker_sub_dir))
-  os.system("docker push {0}/{1}/{2}:{3} ".format(docker_repo, docker_sub_dir, service_name, tag))
-  print("-------build service {} complete-------".format(service_name))
+        if command("docker build %s -t %s:%s ." % (build_args, service_name, tag)) == "error":
+            return "error"
+  command("docker tag {0}:{1} {2}/{3}/{0}:{1} ".format(service_name, tag, docker_repo, docker_sub_dir))
+  command("docker push {0}/{1}/{2}:{3} ".format(docker_repo, docker_sub_dir, service_name, tag))
 
 
 def main(tag="latest"):
@@ -84,22 +91,29 @@ def main(tag="latest"):
   docker_userpasswd = config_data.get("env").get("harbor_passwd")
   docker_remot_ip = config_data.get("env").get("harbor_host_ip")
   if os.popen("grep -rn '{0}' /etc/hosts|wc -l".format(docker_repo)).read()[0] == '0':
-    os.system("sudo sed -i '$a {0} {1}' /etc/hosts".format(docker_remot_ip, docker_repo))
-  os.system("docker login -p {0} -u {1} {2}".format(docker_userpasswd, docker_user, docker_repo))
+    command("sudo sed -i '$a {0} {1}' /etc/hosts".format(docker_remot_ip, docker_repo))
+  command("docker login -p {0} -u {1} {2}".format(docker_userpasswd, docker_user, docker_repo))
   function_path = os.path.join(rootPath, "services/functions")
   allFunction_dirs = [f for f in os.listdir(function_path) if re.match("scale_*", f)]
+  success_number = 0
+  failed_list = []
   for function_dir in allFunction_dirs:
     function_name = os.path.split(function_dir)[-1].replace('_', '-')
     # build function docker images
-    build_function(rootPath, function_name, docker_repo, docker_sub_dir)
-
+    if build_function(rootPath, function_name, docker_repo, docker_sub_dir) == "error":
+        failed_list.append(function_name)
+        continue
+    success_number += 1
   # find all the paths need to build based on dockerfile
   serviceBase_path = os.path.join(rootPath, "services")
   service_names = [f for f in os.listdir(serviceBase_path) if not re.match("functions", f)]
   for name in service_names:
     service_path = os.path.join(serviceBase_path, name)
-    build_service(service_path, name, docker_repo, docker_sub_dir, tag)
-
+    if build_service(service_path, name, docker_repo, docker_sub_dir, tag) == "error":
+        failed_list.append(name)
+        continue 
+    success_number += 1
+  print("Build summary: success : {0}, failed_number : {1}, failed_name : {2}.".format(success_number, len(failed_list), failed_list))
 
 if __name__ == '__main__':
   docker_tag = "latest"

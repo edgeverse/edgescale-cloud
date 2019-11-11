@@ -1,0 +1,103 @@
+global
+	log /dev/log	local0
+	log /dev/log	local1 notice
+	stats socket /run/admin.sock mode 660 level admin
+	stats timeout 30s
+	user www-data
+	group www-data
+	daemon
+
+	# Default SSL material locations
+	ca-base /etc/ssl/certs
+	crt-base /etc/ssl/private
+
+	# Default ciphers to use on SSL-enabled listening sockets.
+	# For more information, see ciphers(1SSL). This list is from:
+	#  https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers/
+	ssl-default-bind-ciphers ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS
+	ssl-default-bind-options no-sslv3
+
+defaults
+	log	global
+	mode	http
+	option	httplog
+	option	dontlognull
+        timeout connect 5000
+        timeout client  50000
+        timeout server  50000
+	errorfile 400 /usr/local/etc/haproxy/errors/400.http
+	errorfile 403 /usr/local/etc/haproxy/errors/403.http
+	errorfile 408 /usr/local/etc/haproxy/errors/408.http
+	errorfile 500 /usr/local/etc/haproxy/errors/500.http
+	errorfile 502 /usr/local/etc/haproxy/errors/502.http
+	errorfile 503 /usr/local/etc/haproxy/errors/503.http
+	errorfile 504 /usr/local/etc/haproxy/errors/504.http
+
+frontend localhost
+   bind {{ master_ip }}:443
+   option tcplog
+   mode tcp
+   option socket-stats
+   tcp-request inspect-delay 5s
+   tcp-request content accept if { req_ssl_hello_type 1 }
+
+   acl is_best req.ssl_sni -i int.b-est.{{ domain_name }}
+   acl is_est req.ssl_sni -i int.e-est.{{ domain_name }}
+   acl is_k8s req.ssl_sni -i int.app.{{ domain_name }}
+   acl is_s3 req.ssl_sni -i int.s3.{{ domain_name }}
+   acl is_harbor req.ssl_sni -i docker.{{ domain_name }}
+   acl is_s380 req.ssl_sni -i s3.{{ domain_name }}
+   acl is_console req.ssl_sni -i console.{{ domain_name }}
+   acl is_api req.ssl_sni -i api.{{ domain_name }}
+
+   use_backend best-cluster if is_best
+   use_backend est-cluster if is_est
+   use_backend k8s_cluster if is_k8s
+   use_backend s3_cluster if is_s3
+   use_backend harbor_cluster if is_harbor
+   use_backend s380_cluster if is_s380
+   use_backend console_cluster if is_console
+   use_backend api_cluster if is_api
+
+#   acl is_s380 hdr_beg(host) -i s3.{{ domain_name }}
+#   use_backend s380_cluster if is_s380
+
+backend est-cluster
+   mode tcp
+   option  ssl-hello-chk
+   server is_est e-est-external:10443
+
+backend api_cluster
+   mode tcp
+   option  ssl-hello-chk
+   server is_api kong-external:8443
+
+backend best-cluster
+   mode tcp
+   option  ssl-hello-chk
+   server is_best b-est-external:11443
+
+backend k8s_cluster
+   mode tcp
+   option  ssl-hello-chk
+   server is_k8s 127.0.0.1:6443
+
+backend s3_cluster
+   mode tcp
+   option  ssl-hello-chk
+   server is_s3 minio-external:9000
+
+backend harbor_cluster
+   mode tcp
+   option  ssl-hello-chk
+   server is_harbor 127.0.0.1:441
+
+backend s380_cluster
+   mode tcp
+   server is_s380 minio-api-external:10086
+
+backend console_cluster
+   mode tcp
+   option  ssl-hello-chk
+   server is_s3 nginx-external:12443
+

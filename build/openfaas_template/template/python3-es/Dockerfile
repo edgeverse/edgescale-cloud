@@ -40,6 +40,8 @@ ENV VERSION = "v1906"
 # Set up of-watchdog for HTTP mode
 ENV fprocess="python index.py"
 ENV cgi_headers="true"
+ENV exec_timeout="25"
+ENV read_timeout="25"
 ENV mode="http"
 ENV upstream_url="http://127.0.0.1:5000"
 HEALTHCHECK --interval=5s CMD [ -e /tmp/.lock ] || exit 1

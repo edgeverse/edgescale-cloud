@@ -16,7 +16,14 @@ spec:
     spec:
       containers:
       - name:  mft
-        image: pcloud.edgescale.org/pcloud/mft
+        image: pcloud.edgescale.org/demo/mft
         imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: /etc/mft
+          name: mft-volume
+      volumes:
+      - name: mft-volume
+        hostPath:
+          path: /etc/edgescale/etc/mft 
       imagePullSecrets:
         - name: kube-repos

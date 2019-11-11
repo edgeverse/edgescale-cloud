@@ -11,10 +11,13 @@ import (
 )
 
 type ESConf struct {
-	API  string  `yaml:"api"`
-	MQTT string  `yaml:"mqtt_url"`
-	Mft  MftConf `yaml:"mft"`
-	ESDB ESDB    `yaml:"esdb"`
+	API        string  `yaml:"api"`
+	MQTT       string  `yaml:"mqtt_url"`
+	ESTAPI     string  `yaml:"estapi"`
+	EAPI       string  `yaml:"eapi"`
+	Trustchain string  `yaml:"trustchain"`
+	Mft        MftConf `yaml:"mft"`
+	ESDB       ESDB    `yaml:"esdb"`
 }
 
 type ESDB struct {

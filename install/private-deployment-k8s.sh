@@ -24,7 +24,7 @@ POSTGRES_PASSWD=$(cat $ConfigPath | jq -r '.db.pg_passwd')
 POSTGRES_ES_PASSWD=$(cat $ConfigPath | jq -r '.db.pg_es_passwd')
 POSTGRES_KONG_PASSWD=$(cat $ConfigPath | jq -r '.db.kong_passwd')
 POSTGRES_MAX_CONNECTION=$(cat $ConfigPath | jq -r '.db.pg_max_connections')
-REDIS_PASSWORD=$(cat $ConfigPath | jq -r '.service.REDIS_PASSWD' )
+REDIS_PASSWORD=$(cat $ConfigPath | jq -r '.db.redis_passwd' )
 
 MINIO_ACCESS_KEY=$(cat $ConfigPath | jq -r '.minio.access_key')
 MINIO_SECRET_KEY=$(cat $ConfigPath | jq -r '.minio.secret_key')
@@ -36,8 +36,6 @@ HARBOR_PASSWORD=$(cat $ConfigPath | jq -r '.env.harbor_passwd')
 HARBOR_USER=$(cat $ConfigPath | jq -r '.env.harbor_user')
 
 DOMAIN_NAME=$(cat $ConfigPath | jq -r '.env.domain_name')
-SSL_CERT=$(cat $ConfigPath | jq -r '.ssl.cert_path')
-SSL_KEY=$(cat $ConfigPath | jq -r '.ssl.key_path')
 
 set +e
 set -o noglob
@@ -315,6 +313,7 @@ function Prepare_edgescale_env(){
 
     mkdir -p /etc/edgescale/etc/mft
     cp $basepath/install/kubernetes/j2_conf/mft/mft.conf.j2 /etc/edgescale/etc/mft/config.yml
+    sed -i "s/{{ domain_name }}/$DOMAIN_NAME/g" /etc/edgescale/etc/mft/config.yaml
 
     mkdir -p /etc/edgescale/etc/haproxy/log
     cp $basepath/install/kubernetes/j2_conf/haproxy/haproxy.conf.j2 /etc/edgescale/etc/haproxy/haproxy.cfg
@@ -465,8 +464,8 @@ function Modify_config(){
         rm get-pip.py
     fi
     cd $basepath/install/kubernetes/config
-    pip3 install -r requirements.txt
-    python3 config.py
+    pip3 install psycopg2-binary
+    python3 config.py $LocalIP 
 }
 
 

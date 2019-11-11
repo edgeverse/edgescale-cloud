@@ -1,44 +1,34 @@
 {
     "env":{
-        "domain_name":"",
-        "harbor_user":"",
-        "harbor_passwd":"",
-        "harbor_domain":"",
-        "harbor_project_name":"",
-        "harbor_host_ip":"",
-        "faas_passwd":"",
-        "faas_user":""
+        "domain_name":"edgescale.demo",
+        "harbor_user":"admin",
+        "harbor_passwd":"Harbor12345",
+        "harbor_domain":"pcloud.edgescale.org",
+        "harbor_project_name":"demo",
+        "harbor_host_ip":"10.193.20.178",
+        "faas_passwd":"edgescale",
+        "faas_user":"admin"
     },
     "service":{
-        "REDIS_PASSWD":"",
-        "ADMIN_EMAIL_PASSWD":"",
-        "SMTP_HOST":"",
-        "ADMIN_EMAIL":"",
-        "SMTP_PORT":"",
-        "MQTT_URI":"",
-        "HOST_SITE":"",
-        "LOG_URL":"",
-        "API_URI":"",
-        "DOCKER_CONTNET_TRUST":"",
-        "APPSERVER_HOST":""
+        "ADMIN_EMAIL_PASSWD":"HAppy2019",
+        "SMTP_HOST":"smtp.office365.com",
+        "ADMIN_EMAIL":"liubin.gong@nxp.com",
+        "SMTP_PORT":"587"
     },
     "db":{
-        "pg_passwd":"",
-        "pg_user":"",
-        "pg_database":"",
-        "pg_host":"",
-        "pg_es_passwd":"",
-        "kong_user":"",
-        "kong_passwd":"",
-        "kong_database":"",
+        "redis_passwd":"edgescale",
+        "pg_passwd":"edgescale",
+        "pg_user":"root",
+        "pg_database":"edgescale",
+        "pg_es_passwd":"edgescale",
+        "kong_user":"kong",
+        "kong_passwd":"kong",
+        "kong_database":"kong",
         "pg_max_connections":1000
     },
     "minio":{
-        "access_key":"",
-        "secret_key":""
-    },
-    "ssl":{
-        "cert_path":"/install/kubernetes/resource/sslcert/edgescale.crt",
-        "key_path":"/install/kubernetes/resource/sslcert/edgescale.key"
+        "access_key":"CSSFSisdfEIKNC",
+        "secret_key":"isdEDegDFfsdfSDjsdlsdfDAO+k"
     }
 }
+

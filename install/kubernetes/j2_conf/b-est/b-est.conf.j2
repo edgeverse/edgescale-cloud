@@ -15,5 +15,5 @@ rootca:
   keyfile: /etc/est/ca/RootCA.key
 
 ocsp_server:
-  - https://b-est-external.openfaas-util:11443/.well-known/ocsp
+  - https://int.b-est.{{ domain_name }}/.well-known/ocsp
 

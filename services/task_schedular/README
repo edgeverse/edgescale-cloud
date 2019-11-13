@@ -1,4 +1,0 @@
-# using python3 virtualenv
-# need export DB_HOST into env
-bash run.sh
-

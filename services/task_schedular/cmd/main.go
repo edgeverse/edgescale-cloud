@@ -33,7 +33,11 @@ func main() {
 	config.InitLog(*LogLevel)
 	config.SetTlsConfig(*CAFile, *CertFile, *KeyFile, *VerifySSL)
 
-	err := model.Init(*DBHost, *DBUser, *DBName, *DBPwd, *DBPort)
+	var debug bool
+	if *LogLevel == 5 {
+		debug = true
+	}
+	err := model.Init(*DBHost, *DBUser, *DBName, *DBPwd, *DBPort, debug)
 	if err != nil {
 		panic(err)
 	}

@@ -12,6 +12,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -38,6 +40,17 @@ func ContainsInt(val int, arr []int) bool {
 		}
 	}
 	return false
+}
+
+func JoinInt(arr interface{}, sep string) string {
+	if s, ok := arr.([]int); ok {
+		var arrStr []string
+		for _, i := range s {
+			arrStr = append(arrStr, strconv.Itoa(i))
+		}
+		return strings.Join(arrStr, sep)
+	}
+	return ""
 }
 
 func ParseToStr(m map[string]string) string {

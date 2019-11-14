@@ -12,7 +12,7 @@ import (
 
 var DB *gorm.DB
 
-func Init(host, user, name, pwd string, port int) error {
+func Init(host, user, name, pwd string, port int, debug bool) error {
 	var err error
 	DB, err = gorm.Open("postgres", fmt.Sprintf("host=%s port=%d user=%s dbname=%s password=%s sslmode=disable",
 		host, port, user, name, pwd))
@@ -23,13 +23,13 @@ func Init(host, user, name, pwd string, port int) error {
 		return err
 	}
 
-	setupDB(DB)
+	setupDB(DB, debug)
 
 	return nil
 }
 
-func setupDB(db *gorm.DB) {
-	db.LogMode(true)
+func setupDB(db *gorm.DB, debug bool) {
+	db.LogMode(debug)
 	db.DB().SetMaxOpenConns(2000)
 	db.DB().SetMaxIdleConns(0)
 }

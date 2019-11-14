@@ -1,10 +1,11 @@
 package model
 
 import (
+	"../util"
 	"database/sql"
-	"github.com/jinzhu/gorm/dialects/postgres"
-	"task_schedular/util"
 	"time"
+
+	"github.com/jinzhu/gorm/dialects/postgres"
 )
 
 const (

@@ -1,8 +1,8 @@
 package config
 
 import (
+	"../util"
 	"github.com/sirupsen/logrus"
-	"task_schedular/util"
 )
 
 const (

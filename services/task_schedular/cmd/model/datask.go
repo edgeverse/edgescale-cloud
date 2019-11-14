@@ -1,14 +1,14 @@
 package model
 
 import (
+	"../config"
+	"../util"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"reflect"
-	"task_schedular/config"
-	"task_schedular/util"
 	"time"
 
 	"github.com/google/uuid"

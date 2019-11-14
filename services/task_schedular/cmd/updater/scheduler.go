@@ -12,7 +12,7 @@ func Scheduler() error {
 		config.Log.Errorf("Get DaTask List, got error: %v", err)
 		return err
 	}
-	config.Log.Infof("Scheduler started, %s need to schedule", len(tasks))
+	config.Log.Infof("Scheduler started, %d need to schedule", len(tasks))
 
 	var wg sync.WaitGroup
 	for _, taskInfo := range tasks {
@@ -34,7 +34,7 @@ func Scheduler() error {
 			if taskInfo.Status != lastStatus {
 				err := taskInfo.UpdateWithMap(map[string]interface{}{"status": lastStatus})
 				if err != nil {
-					config.Log.Errorf("Update Task, taskID[%d], ")
+					config.Log.Errorf("Update Task, taskID[%d], error: %v", taskInfo.ID, err)
 				}
 			}
 		}()

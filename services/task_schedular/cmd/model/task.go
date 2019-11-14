@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	TaskStatusHealthy = []uint8{TaskStatusReady, TaskStatusScheduled, TaskStatusStarted}
+	TaskStatusHealthy = []int{TaskStatusReady, TaskStatusScheduled, TaskStatusStarted}
 	TaskStatusNames   = map[int]string{
 		TaskStatusReady:     "Created",
 		TaskStatusScheduled: "Scheduled",
@@ -73,11 +73,10 @@ func (*EsTask) ParseStatus(statuses []int) int {
 func GetDaTasks(limit, offset int) (es []EsTask, err error) {
 	limit, offset = util.CheckLimitAndOffset(limit, offset)
 
-	where := map[string]interface{}{
-		"type":           TaskTypeApp,
-		"status":         TaskStatusHealthy,
-		"logical_delete": false}
-	err = DB.Where(where).Limit(limit).Offset(offset).Find(&es).Error
+	err = DB.Where("type = ? AND status in (?) AND logical_delete = ?",
+		TaskTypeApp,
+		TaskStatusHealthy,
+		false).Limit(limit).Offset(offset).Find(&es).Error
 	return
 }
 

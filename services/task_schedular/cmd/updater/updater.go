@@ -4,9 +4,9 @@
 package updater
 
 import (
+	"../config"
+	"../model"
 	"sync"
-	"task_schedular/config"
-	"task_schedular/model"
 )
 
 func UpdateTask(AppHost, AppPort string) error {

@@ -4,9 +4,9 @@
 package main
 
 import (
-	"task_schedular/config"
-	"task_schedular/model"
-	"task_schedular/updater"
+	"./config"
+	"./model"
+	"./updater"
 	"time"
 
 	"github.com/spf13/pflag"

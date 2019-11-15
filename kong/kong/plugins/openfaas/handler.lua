@@ -98,9 +98,10 @@ end
 --send requests to mft service 
 local function mftMapping(url,body,query,header,method)
     local client = http.new()
-    if string.match(url,"^/v1/enroll") or string.match(url,"^/v1/est/device")
-            or string.match(url,"^/v1/devices/certificates") then
-        local res,err = client:request_uri(fields.mfthosts..url,
+    mft_routers_template = fields.mft_routers
+    for i in pairs(mft_routers_template) do
+            if string.match(url,mft_routers_template[i]) then 
+                local res,err = client:request_uri(fields.mfthosts..url,
                                          {
                                                  method = method,
                                                  query = query,
@@ -108,8 +109,9 @@ local function mftMapping(url,body,query,header,method)
                                                  headers = header,
                                          }
                                     )
-        backtrack(res)
-   end
+                 backtrack(res)
+            end
+   end 
    return OpenFaas
 end
 

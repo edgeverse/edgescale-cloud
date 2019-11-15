@@ -7,5 +7,6 @@ return {
         allow_origin = "*",
         allow_security = "max-age=31536000; includeSubdomains",
         device_key = "sadf9DFoiasdFGUYUIJOIcivmv'*(7*&^%(*SA&%%$SAHDLKJHASD&^*%ed87f6sdf*&023-04l12k3i;",
-        key = "x^0&*${<?@[l#~?+"
+        key = "x^0&*${<?@[l#~?+",
+        mft_routers = {"^/v1/mft","^/v1/key","^/v1/fuse","^/v1/enroll","^/v1/est","^/v1/devices/certificates","^/v1/customers/[a-z0-9_]+$/devices"}
 }

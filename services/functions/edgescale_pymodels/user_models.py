@@ -307,15 +307,10 @@ class DccaVendor(OutputMixin, Base):
         return status
 
     @classmethod
-    def delete_one(cls, _id):
-        item = session.query(cls).filter(cls.id == _id).first()
-
-        if not item:
-            status = {"status": "fail", "message": "vendor is not exist"}
-        else:
-            session.delete(item)
-            session.commit()
-            status = {"status": "success", "message": "remove vendor successfully"}
+    def delete(cls, ids):
+        session.query(cls).filter(cls.id.in_(ids)).delete(synchronize_session=False)
+        session.commit()
+        status = {"status": "success", "message": "remove vendor successfully"}
 
         return status
 

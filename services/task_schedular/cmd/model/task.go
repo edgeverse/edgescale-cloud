@@ -79,7 +79,8 @@ func GetDaTasks(limit, offset int) (es []EsTask, err error) {
 	err = DB.Where("type = ? AND status in (?) AND logical_delete = ?",
 		TaskTypeApp,
 		TaskStatusHealthy,
-		false).Limit(limit).Offset(offset).Find(&es).Error
+		false).Limit(limit).Offset(offset).
+		Order("created_at desc").Find(&es).Error
 	return
 }
 

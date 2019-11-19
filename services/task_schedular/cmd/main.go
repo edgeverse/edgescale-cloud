@@ -25,6 +25,7 @@ var (
 	VerifySSL = pflag.BoolP("verify_ssl", "s", false, "verify ssl")
 	APPHost   = pflag.StringP("app_host", "t", "127.0.0.1", "app host")
 	APPPort   = pflag.StringP("app_port", "r", "7443", "app port")
+	MaxPool   = pflag.IntP("max_pool", "x", 20, "max connection number for pool")
 )
 
 func main() {
@@ -37,7 +38,7 @@ func main() {
 	if *LogLevel == 5 {
 		debug = true
 	}
-	err := model.Init(*DBHost, *DBUser, *DBName, *DBPwd, *DBPort, debug)
+	err := model.Init(*DBHost, *DBUser, *DBName, *DBPwd, *DBPort, *MaxPool, debug)
 	if err != nil {
 		panic(err)
 	}

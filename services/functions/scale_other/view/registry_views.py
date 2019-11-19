@@ -78,7 +78,7 @@ def delete_registry():
         return jsonify(UNAUTH_RESULT)
 
     check_json(request)
-    registry_ids = get_json(request).get("registry_ids")
+    registry_ids = get_json(request).get("ids")
     is_admin = True if request.headers.get('admin') == 'true' else False
 
     if not registry_ids:

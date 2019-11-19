@@ -112,13 +112,21 @@ def update_vendor(vendor_id):
     return jsonify(status)
 
 
-@vendor_v2_bp.route("/<vendor_id>", methods=["DELETE"])
-def remove_vendor(vendor_id):
+@vendor_v2_bp.route("", methods=["DELETE"])
+def remove_vendor():
     uid, err = get_oemid(request=request)
     if err is not None:
         return jsonify(UNAUTH_RESULT)
 
     is_admin = True if request.headers.get('admin') == 'true' else False
+    ids = get_json(request).get("ids")
+
+    if not ids:
+        return jsonify({
+            'status': 'fail',
+            'message': 'The "vendor_ids" can not be empty'
+        })
+
     if not is_admin:
         return jsonify({
             'status': 'fail',
@@ -126,7 +134,7 @@ def remove_vendor(vendor_id):
         })
 
     try:
-        status = DccaVendor.delete_one(vendor_id)
+        status = DccaVendor.delete(ids)
     except Exception:
         raise DCCAException("Delete vendor failed")
 

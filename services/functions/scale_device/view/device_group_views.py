@@ -409,7 +409,7 @@ def query_group_devices_statistics():
         location_items = request.cursor.fetchall()
 
         for loc_item in location_items:
-            status = query_one_device_status(loc_item[1])
+            status = query_one_device_status(loc_item[1])["status"]
             loc_item = LocationItem._make(loc_item + (status,))
             continent = loc_item.continent
             status = loc_item.status

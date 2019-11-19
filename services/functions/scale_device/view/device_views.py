@@ -582,7 +582,7 @@ def get_device_logs():
     if err is not None:
         return jsonify(UNAUTH_RESULT)
 
-    name = request.args.get('device_name')
+    name = request.args.get('deviceid')
     log_type = request.args.get('log_type')
     empty_check(name, error_message='The "device_name" cannot be empty.')
 
@@ -610,13 +610,12 @@ def get_logs_signer():
 
     presigned_url = S3_LOG_URL + "/signer?username={0}&objectname={1}&type=text".format(logname,device_id)
     return jsonify({
-        "state":"success",
         "url": presigned_url
     })
 
 
 @device_bp.route("/statistics", methods=["GET"])
-def query_devices_statistics_v2():
+def query_devices_statistics():
     uid, err = get_oemid(request=request)
     if err is not None:
         return jsonify(UNAUTH_RESULT)
@@ -1009,6 +1008,11 @@ def query_ota_status():
 
     mid = request.args.get('mid')
     inst = EsTaskOtaInst.get(mid)
+    if inst is None:
+        return jsonify({
+            "status": "failed",
+            "message": "No records found using this mid: %s" % mid
+        })
     return jsonify(OTA_STATUS_MAP[inst.status])
 
 

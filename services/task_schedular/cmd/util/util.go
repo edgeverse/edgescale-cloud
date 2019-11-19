@@ -65,10 +65,12 @@ func ParseToStr(m map[string]string) string {
 }
 
 type TlsConfig struct {
-	RootCAFile string
-	PemFile    string
-	KeyFile    string
-	Verify     bool
+	RootCAFile     string
+	PemFile        string
+	KeyFile        string
+	Verify         bool
+	cacheTlsConfig *tls.Config
+	isCache        bool
 }
 
 func (c *TlsConfig) Type() int {
@@ -84,6 +86,10 @@ func (c *TlsConfig) Type() int {
 func (c *TlsConfig) GenerateTlsConfig() (*tls.Config, error) {
 	config := &tls.Config{}
 
+	if c.isCache {
+		return c.cacheTlsConfig, nil
+	}
+
 	if !c.Verify {
 		config.InsecureSkipVerify = true
 	}
@@ -96,7 +102,6 @@ func (c *TlsConfig) GenerateTlsConfig() (*tls.Config, error) {
 		}
 
 		config.RootCAs = certPool
-		return config, nil
 	case CertType:
 		cert, err := ReadCertificate(c.PemFile, c.KeyFile)
 		if err != nil {
@@ -110,8 +115,11 @@ func (c *TlsConfig) GenerateTlsConfig() (*tls.Config, error) {
 
 		config.Certificates = []tls.Certificate{cert}
 		config.RootCAs = certPool
-		return config, nil
 	}
+
+	c.isCache = true
+	c.cacheTlsConfig = config
+
 	return config, nil
 }
 
@@ -144,7 +152,7 @@ func ReadCertificate(certFile, keyFile string) (tls.Certificate, error) {
 	return certificate, err
 }
 
-func Get(url string, param map[string]string, header map[string]string, tlsConfig TlsConfig) (*http.Response, error) {
+func Get(url string, param map[string]string, header map[string]string, tlsConfig *TlsConfig) (*http.Response, error) {
 	tc, err := tlsConfig.GenerateTlsConfig()
 	if err != nil {
 		return nil, err

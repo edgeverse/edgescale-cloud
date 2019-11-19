@@ -12,7 +12,7 @@ const (
 
 var (
 	Log       *logrus.Logger
-	TlsConfig util.TlsConfig
+	TlsConfig *util.TlsConfig
 )
 
 var (
@@ -30,7 +30,7 @@ func InitLog(logLevel uint) {
 }
 
 func SetTlsConfig(caFile, certFile, keyFile string, verifySSL bool) {
-	TlsConfig = util.TlsConfig{
+	TlsConfig = &util.TlsConfig{
 		RootCAFile: caFile,
 		PemFile:    certFile,
 		KeyFile:    keyFile,

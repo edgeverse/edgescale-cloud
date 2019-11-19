@@ -242,11 +242,12 @@ UpdateStatusAndPayload:
 func GetDaInst(limit, offset int) (di []EsTaskDaInst, err error) {
 	limit, offset = util.CheckLimitAndOffset(limit, offset)
 
-	err = DB.Where("status NOT IN (?)", DaTaskCanEnd).Limit(limit).Offset(offset).Find(&di).Error
+	err = DB.Where("status NOT IN (?)", DaTaskCanEnd).Limit(limit).Offset(offset).
+		Order("created_at desc").Find(&di).Error
 	return
 }
 
 func GetDaInstByTaskID(taskID int) (di []EsTaskDaInst, err error) {
-	err = DB.Where("task_id = ?", taskID).Find(&di).Error
+	err = DB.Where("task_id = ?", taskID).Order("created_at desc").Find(&di).Error
 	return
 }

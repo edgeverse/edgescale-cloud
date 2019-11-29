@@ -1,0 +1,27 @@
+diff -uNr a/configs/build_lsdk.cfg b/configs/build_lsdk.cfg
+--- a/configs/build_lsdk.cfg	2019-10-22 14:30:53.000000000 +0800
++++ b/configs/build_lsdk.cfg	2019-11-29 14:10:13.810437599 +0800
+@@ -231,9 +231,9 @@
+ eiq_repo_url=http://source.codeaurora.org/external/qoriq/qoriq-components/eiq.git
+ eiq_repo_tag=LSDK-19.09
+ edgescale_eds_repo_url=git://github.com/nxp/qoriq-edgescale-eds.git
+-edgescale_eds_repo_tag=LSDK-19.09
++edgescale_eds_repo_tag=LSDK-19.09-update-291119
+ eds_bootstrap_repo_url=git://github.com/nxp/qoriq-eds-bootstrap.git
+-eds_bootstrap_repo_tag=LSDK-19.09
++eds_bootstrap_repo_tag=LSDK-19.09-update-291119
+ eds_kubelet_repo_url=git://github.com/nxp/qoriq-eds-kubelet.git
+ eds_kubelet_repo_tag=LSDK-19.09
+ cjson_repo_url=git://github.com/DaveGamble/cJSON.git
+diff -uNr a/packages/apps/Makefile b/packages/apps/Makefile
+--- a/packages/apps/Makefile	2019-10-22 14:30:53.000000000 +0800
++++ b/packages/apps/Makefile	2019-11-29 14:09:19.550438718 +0800
+@@ -585,7 +585,7 @@
+ 	 $(call fbprint_b,"eds_bootstrap") && $(call fetch-git-tree,eds_bootstrap) && \
+ 	 if [ $(DESTARCH) = arm32 ]; then arch=arm; elif [ $(DESTARCH) = arm64 ]; then \
+ 	 arch=arm64; else echo $(DESTARCH) is unsupported in eds-bootstrap; exit 0; fi && \
+-	 cd $(FBDIR)/packages/apps/eds_bootstrap && $(MAKE) install INSTALL_DIR=$(DESTDIR) ARCH=$$arch && \
++	 cd $(FBDIR)/packages/apps/eds_bootstrap && $(MAKE) ARCH=$$arch && $(MAKE) install INSTALL_DIR=$(DESTDIR) ARCH=$$arch && \
+ 	 $(call fbprint_d,"eds_bootstrap")
+ endif
+ 

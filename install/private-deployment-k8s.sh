@@ -314,6 +314,7 @@ function Prepare_edgescale_env(){
     mkdir -p /etc/edgescale/etc/mft
     cp $basepath/install/kubernetes/j2_conf/mft/mft.conf.j2 /etc/edgescale/etc/mft/config.yaml
     sed -i "s/{{ domain_name }}/$DOMAIN_NAME/g" /etc/edgescale/etc/mft/config.yaml
+    sed -i 's,trustchain.*,trustchain: '"`cat $basepath/install/kubernetes/j2_conf/rootCa.crt |base64 | tr -d '\n'`"',' /etc/edgescale/etc/mft/config.yaml
 
     mkdir -p /etc/edgescale/etc/haproxy/log
     cp $basepath/install/kubernetes/j2_conf/haproxy/haproxy.conf.j2 /etc/edgescale/etc/haproxy/haproxy.cfg

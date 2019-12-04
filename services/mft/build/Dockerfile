@@ -3,8 +3,6 @@ FROM busybox:glibc
 
 # Add files.
 ADD  lambda_handler /root/
-RUN mkdir -p /etc/edgescale 
-ADD config.yml /etc/edgescale/ 
 # Set environment variables.
 ENV HOME /root
 # Define working directory.

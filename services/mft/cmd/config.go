@@ -52,7 +52,7 @@ func ESConfInit() {
 		data, err = base64.StdEncoding.DecodeString(envConf)
 	}
 	if err != nil || envConf == "" {
-		if data, err = ioutil.ReadFile("/etc/edgescale/config.yml"); err != nil {
+		if data, err = ioutil.ReadFile("/etc/edgescale/config.yaml"); err != nil {
 			CloudConfig(version)
 			return
 		}

@@ -11,10 +11,13 @@ import (
 )
 
 type ESConf struct {
-	API  string  `yaml:"api"`
-	MQTT string  `yaml:"mqtt_url"`
-	Mft  MftConf `yaml:"mft"`
-	ESDB ESDB    `yaml:"esdb"`
+	API        string  `yaml:"api"`
+	MQTT       string  `yaml:"mqtt_url"`
+	ESTAPI     string  `yaml:"estapi"`
+	EAPI       string  `yaml:"eapi"`
+	Trustchain string  `yaml:"trustchain"`
+	Mft        MftConf `yaml:"mft"`
+	ESDB       ESDB    `yaml:"esdb"`
 }
 
 type ESDB struct {
@@ -49,7 +52,7 @@ func ESConfInit() {
 		data, err = base64.StdEncoding.DecodeString(envConf)
 	}
 	if err != nil || envConf == "" {
-		if data, err = ioutil.ReadFile("/etc/edgescale/config.yml"); err != nil {
+		if data, err = ioutil.ReadFile("/etc/edgescale/config.yaml"); err != nil {
 			CloudConfig(version)
 			return
 		}

@@ -26,6 +26,8 @@ spec:
           value: access_key
         - name: secretAccessKey 
           value: secret_key
+        - name: hostIp
+          value: minio_ip
         ports:
         - containerPort: 10086
           hostPort: 10086

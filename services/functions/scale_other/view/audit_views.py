@@ -26,6 +26,13 @@ def query_audit_view():
     order_by = request.args.get('orderBy') or 'created_at'
     order_type = request.args.get('orderType') or 'desc'
 
+    is_admin = True if request.headers.get('admin', False) == 'true' else False
+    if not is_admin:
+        return jsonify({
+            'status': 'fail',
+            'message': 'Unauthorized, administrator is assumed to access this.'
+        })
+
     if order_type not in ['asc', 'desc']:
         return jsonify({
             'status': "fail",
@@ -134,6 +141,13 @@ def handler_audit_view(audit_id):
         return jsonify(UNAUTH_RESULT)
 
     action = get_json(request).get('action')
+
+    is_admin = True if request.headers.get('admin', False) == 'true' else False
+    if not is_admin:
+        return {
+            'status': 'fail',
+            'message': 'Unauthorized, administrator is assumed to access this.'
+        }
 
     request.cursor.execute(query_one_audit, (audit_id,))
     audit = request.cursor.fetchone()

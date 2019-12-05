@@ -126,7 +126,7 @@ def send_email_register():
 
     # If success to create the user, then send an email
     return jsonify(
-        send_email_reset_pwd(SMTP_HOST, SMTP_PORT, ADMIN_EMAIL, ADMIN_EMAIL_PWD, email, token, account, HOST_SITE))
+        send_email_reset_pwd(SMTP_HOST, SMTP_PORT, ADMIN_EMAIL, ADMIN_EMAIL_PASSWD, email, token, account, HOST_SITE))
 
 
 def count_user_by_name(username):
@@ -176,7 +176,6 @@ def create_user(username, password, email, oem_id=None, account_type_id=ACCOUNT_
         request.cursor.execute(grant_user_default_role_sql, (user_id, DEFAULT_ROLE_ID))
     except Exception:
         raise DCCAException('Fail to create user role')
-
 
     # Make the limits data
     request.cursor.execute(query_limit_types_sql)
@@ -423,7 +422,7 @@ def confirm_to_reset_password():
 
     token = generate_token(user.uid)
     account = account_str(username, email)
-    return jsonify(send_email_reset_pwd(SMTP_HOST,SMTP_PORT,ADMIN_EMAIL,ADMIN_EMAIL_PWD,email,token, account, HOST_SITE))
+    return jsonify(send_email_reset_pwd(SMTP_HOST,SMTP_PORT,ADMIN_EMAIL,ADMIN_EMAIL_PASSWD,email,token, account, HOST_SITE))
 
 
 @user_bp.route("/password/reset", methods=["PUT"])

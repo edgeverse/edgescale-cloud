@@ -1,47 +1,34 @@
 {
     "env":{
-        "domain_name":"",
+        "domain_name":"edgescale.demo",
+        "faas_passwd":"edgescale",
+        "faas_user":"admin",
         "harbor_user":"",
-        "harbor_pass":"",
+        "harbor_passwd":"",
         "harbor_domain":"",
-        "harbor_respo_subdir":"",
-        "harbor_ip_address":"",
-        "faas_pass":"",
-        "faas_user":""
+        "harbor_project_name":"",
+        "harbor_host_ip":""
     },
-   "service":{
-		"REDIS_PWD":"",
-		"ADMIN_EMAIL_PWD":"",
-		"SMTP_HOST":"",
-		"ADMIN_EMAIL":"",
-		"SMTP_PORT":"",
-		"MQTT_URI":"",
-		"HOST_SITE":"",
-		"LOG_URL":"",
-		"API_URI":"",
-		"DOCKER_CONTNET_TRUST":"",
-		"K8S_HOST":""
-   },
+    "service":{
+        "ADMIN_EMAIL_PASSWD":"",
+        "SMTP_HOST":"",
+        "ADMIN_EMAIL":"",
+        "SMTP_PORT":""
+    },
     "db":{
-        "pg_pass":"",
-        "pg_user":"",
-        "pg_database":"",
-        "pg_host":"",
-        "pg_es_pass":"",
-        "mongo_user":"",
-        "mongo_pass":"",
-        "kong_user":"",
-        "kong_pass":"",
-        "kong_database":"",
+        "redis_passwd":"edgescale",
+        "pg_passwd":"edgescale",
+        "pg_user":"root",
+        "pg_database":"edgescale",
+        "pg_es_passwd":"edgescale",
+        "kong_user":"kong",
+        "kong_passwd":"kong",
+        "kong_database":"kong",
         "pg_max_connections":1000
     },
     "minio":{
-        "access_key":"",
-        "secret_key":""
-    },
-    "ssl":{
-        "cert_path":"/install/kubernetes/resource/sslcert/edgescale.crt",
-        "key_path":"/install/kubernetes/resource/sslcert/edgescale.key"
+        "access_key":"CSSFSisdfEIKNC",
+        "secret_key":"isdEDegDFfsdfSDjsdlsdfDAO+k"
     }
 }
 

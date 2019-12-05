@@ -243,22 +243,22 @@ SELECT
 FROM
   dcca_app_mirror
 WHERE 
-  id={registry_id};
+  id in ({registry_ids});
 '''
 
 # Delete docker registry
 remove_registry_sql = '''
-DELETE FROM dcca_app_mirror WHERE id={registry_id};
+DELETE FROM dcca_app_mirror WHERE id in ({registry_ids});
 '''
 
 # Delete softapp
 remove_softapp_sql = '''
-DELETE FROM dcca_softapps WHERE mirror_id={mirror_id};
+DELETE FROM dcca_softapps WHERE mirror_id in ({mirror_ids});
 '''
 
 # Query softapp
 query_softapps_sql = '''
-SELECT id FROM dcca_softapps WHERE mirror_id={mirror_id};
+SELECT id FROM dcca_softapps WHERE mirror_id in ({mirror_ids});
 '''
 
 # Delete es_task_da_inst

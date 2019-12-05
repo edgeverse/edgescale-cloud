@@ -3,7 +3,7 @@
 
 from flask import Flask, request, jsonify
 
-from model import IS_DEBUG, es_pool
+from model import IS_DEBUG, es_pool, session
 from error_handler import handle_dcca_exception
 from error_handler import handle_input_exception
 from error_handler import handle_other_exception
@@ -18,6 +18,7 @@ inner_app.config["JSON_AS_ASCII"] = False
 
 @permission_bp.before_request
 def set_db_conn_and_corsor(*args, **kwargs):
+    session.expire_all()
     if not es_pool:
         return jsonify({
           "error": True,

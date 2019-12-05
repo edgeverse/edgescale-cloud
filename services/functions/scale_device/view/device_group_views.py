@@ -16,7 +16,7 @@ from edgescale_pymodels.user_models import DccaUser, DccaCustomer
 from edgescale_pyutils.model_utils import ctx
 from edgescale_pyutils.view_utils import get_oemid, get_json
 from edgescale_pyutils.param_utils import empty_check, input_valid_check, check_json
-from model import K8S_HOST, K8S_PORT, MQTT_HOST
+from model import APPSERVER_HOST, APPSERVER_PORT, MQTT_HOST
 from model.ischema import *
 from utils import *
 
@@ -409,7 +409,7 @@ def query_group_devices_statistics():
         location_items = request.cursor.fetchall()
 
         for loc_item in location_items:
-            status = query_one_device_status(loc_item[1])
+            status = query_one_device_status(loc_item[1])["status"]
             loc_item = LocationItem._make(loc_item + (status,))
             continent = loc_item.continent
             status = loc_item.status
@@ -522,7 +522,7 @@ def group_create_tasks():
             for inst in inst_list:
                 if inst.task.type == TASK_TYPE_APP:
                     print(('Start da task: ', inst))
-                    inst.start(K8S_HOST, K8S_PORT)
+                    inst.start(APPSERVER_HOST, APPSERVER_PORT)
                 elif inst.task.type == TASK_TYPE_SOLUTION:
                     print('Start ota task')
                     inst.start(MQTT_HOST)

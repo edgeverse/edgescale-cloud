@@ -1,5 +1,7 @@
 ---
   
+es_api: https://api.edgescale.demo/v1
+es_token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjQ3MjI1NzI1OTIsInVpZCI6NDgsInVzZXJuYW1lIjoiYjI1MzMyIiwiYWRtaW4iOjEsImFjY291bnRfdHlwZV9pZCI6Mn0.ceX6O-Lo7u3zGCT8qCLTunOk9js4qpDbECTePM_ERgk 
 addr: :443
 certfile: /etc/est/est.crt
 keyfile: /etc/est/est.key
@@ -11,5 +13,5 @@ rootca:
   keyfile: /etc/est/ca/RootCA.key
 
 ocsp_server:
-  - https://int.e-est.edgescale.org/.well-known/ocsp
+  - https://int.e-est.edgescale.demo/.well-known/ocsp
 

@@ -1,0 +1,19 @@
+---
+es_api: https://kong-external.openfaas-util:8443/v1
+es_token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjQ3MjI1NzI1OTIsInVpZCI6NCwidXNlcm5hbWUiOiJvZW1fdGVzdCIsImFkbWluIjowLCJhY2NvdW50X3R5cGVfaWQiOjJ9.3npoWX1mC8IdvZUML_gxGPAQ-3MVSS7bTArhJLEHlds 
+
+addr: :443
+certfile: /etc/est/est.crt
+keyfile: /etc/est/est.key
+trustcafile: /etc/est/trustca.crt
+default_days: 1
+bootstrap_user: fsl-admin
+bootstrap_pass: d4ac83761b1fb088d80de8c8b4c726a7
+
+rootca:
+  certfile: /etc/est/ca/RootCA.crt
+  keyfile: /etc/est/ca/RootCA.key
+
+ocsp_server:
+  - https://int.b-est.{{ domain_name }}/.well-known/ocsp
+

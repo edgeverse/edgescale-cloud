@@ -26,6 +26,8 @@ type Config struct {
 	TrustCAFile   string        `yaml:"trustcafile"`
 	TrustRoot     x509.Certificate
 	OCSPServer    []string `yaml:"ocsp_server"`
+	ESAPI         string   `yaml:"es_api"`
+	ESToken       string   `yaml:"es_token"`
 	tlsConfig     *tls.Config
 }
 

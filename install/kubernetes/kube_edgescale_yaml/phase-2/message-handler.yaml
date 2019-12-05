@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name:  message-handler
-        image: pcloud.edgescale.org/pcloud/message-handler
+        image: pcloud.edgescale.org/demo/message-handler
         imagePullPolicy: Always
       imagePullSecrets:
         - name: kube-repos

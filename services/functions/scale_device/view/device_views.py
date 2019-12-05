@@ -23,7 +23,7 @@ from edgescale_pyutils.view_utils import get_oemid, get_json
 from edgescale_pyutils.common_utils import format_time
 from edgescale_pyutils.param_utils import empty_check, check_json
 from model import IS_DEBUG, SHORT_REST_API_ID, MQTT_HOST, S3_LOG_URL, DEVICE_TABLE, MQTT_LOCAL_HOST, \
-    MQTT_MGMT_PASS, MQTT_MGMT_USER, REDIS_KEY_CREATE_DEVICE_FORMAT, API_URI, MQTT_URI, docker_content_trust_server
+    MQTT_MGMT_PASSWD, MQTT_MGMT_USER, REDIS_KEY_CREATE_DEVICE_FORMAT, API_URI, MQTT_URI, docker_content_trust_server
 from model import session
 from utils import *
 
@@ -582,7 +582,7 @@ def get_device_logs():
     if err is not None:
         return jsonify(UNAUTH_RESULT)
 
-    name = request.args.get('device_name')
+    name = request.args.get('deviceid')
     log_type = request.args.get('log_type')
     empty_check(name, error_message='The "device_name" cannot be empty.')
 
@@ -610,13 +610,12 @@ def get_logs_signer():
 
     presigned_url = S3_LOG_URL + "/signer?username={0}&objectname={1}&type=text".format(logname,device_id)
     return jsonify({
-        "state":"success",
         "url": presigned_url
     })
 
 
 @device_bp.route("/statistics", methods=["GET"])
-def query_devices_statistics_v2():
+def query_devices_statistics():
     uid, err = get_oemid(request=request)
     if err is not None:
         return jsonify(UNAUTH_RESULT)
@@ -684,7 +683,7 @@ def execute_operation():
         try:
             request.cursor.execute(update_device_lifecycle_by_device_name, (device_lifecycle, device_name))
             request.conn.commit()
-            execute_action = '{"action": "factory_reset"}'
+            execute_action = '{"action": "device_reset"}'
         except ClientError as e:
             request.conn.rollback()
             return jsonify({"error": e.response['Error']['Message']})
@@ -692,10 +691,10 @@ def execute_operation():
     elif operation_method == "reboot":
         if current_status == RETIRED:
             return jsonify({"status": "fail", "message": "fail to reboot"})
-        execute_action = {
+        execute_action = json.dumps({
                 'action': 'device_reboot',
                 'mid': str(uuid.uuid4()),
-         }
+         })
 
     try:
         cc = {
@@ -706,7 +705,7 @@ def execute_operation():
             "client_id": "iot-hub-lambda"
         }
         requests.post(MQTT_LOCAL_HOST + "/api/v3/mqtt/publish", data=json.dumps(cc),
-                      auth=(MQTT_MGMT_USER, MQTT_MGMT_PASS))
+                      auth=(MQTT_MGMT_USER, MQTT_MGMT_PASSWD))
         return jsonify({"status": 'success', "message": "operation successfully"})
     except ClientError as e:
         return jsonify({"error": e.response['Error']['Message']})
@@ -1009,6 +1008,11 @@ def query_ota_status():
 
     mid = request.args.get('mid')
     inst = EsTaskOtaInst.get(mid)
+    if inst is None:
+        return jsonify({
+            "status": "failed",
+            "message": "No records found using this mid: %s" % mid
+        })
     return jsonify(OTA_STATUS_MAP[inst.status])
 
 
@@ -1336,6 +1340,8 @@ def device_get_endpoint(device_id):
             endpoints['mqtt'] = dict({'uri': endpoint['url'] + ":" + endpoint['port']})
         elif not endpoint['name'].lower().find('dockerrepo'):
             endpoints['docker_trust_token'] = endpoint['access_token']
+        elif not endpoint['name'].lower().find('accesskey'):
+            endpoints['accesskey'] = endpoint['accesskey']
         else:
             endpoints.update(
                 dict({endpoint['name'].lower().replace(" ", "_"): endpoint['url'] + ":" + endpoint['port']}))

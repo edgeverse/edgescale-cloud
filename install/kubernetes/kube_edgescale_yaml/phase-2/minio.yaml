@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name:  minio
-        image: pcloud.edgescale.org/pcloud/minio 
+        image: pcloud.edgescale.org/demo/minio 
         imagePullPolicy: Always
         volumeMounts:
         - mountPath: /data 

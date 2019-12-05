@@ -15,7 +15,7 @@ from edgescale_pyutils.exception_utils import DCCAException
 from edgescale_pyutils.model_utils import ctx
 from edgescale_pyutils.param_utils import empty_check, check_json
 from edgescale_pyutils.view_utils import get_oemid, get_json
-from model import K8S_HOST, K8S_PORT, MQTT_HOST, es_version, session
+from model import APPSERVER_HOST, APPSERVER_PORT, MQTT_HOST, es_version, session
 from model.ischema import *
 from model.raw_sqls import *
 from model.constants import *
@@ -187,7 +187,7 @@ def create_task():
                 )
             params = None
 
-            deploy_url = RESOURCE_POST_TASK.format(dns=K8S_HOST, port=K8S_PORT, uid=uid)
+            deploy_url = RESOURCE_POST_TASK.format(dns=APPSERVER_HOST, port=APPSERVER_PORT, uid=uid)
             task.start(deploy_url, params, data=json.dumps(data))
         session.commit()
 
@@ -195,7 +195,7 @@ def create_task():
             if inst.task.type == TASK_TYPE_APP:
                 print('Start da task')
                 try:
-                    inst.start(K8S_HOST, K8S_PORT)
+                    inst.start(APPSERVER_HOST, APPSERVER_PORT)
                     session.add(inst)
                 except Exception:
                     session.rollback()

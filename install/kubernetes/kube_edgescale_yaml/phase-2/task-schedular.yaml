@@ -16,18 +16,16 @@ spec:
     spec:
       containers:
       - name:  task-schedular
-        image: pcloud.edgescale.org/pcloud/task_schedular
+        image: pcloud.edgescale.org/demo/task_schedular
         imagePullPolicy: Always
         env:
-        - name: DB_HOST
+        - name: dbhost
           value: postgres-external.openfaas-util
-        - name: DB_PASSWORD
+        - name: dbpwd
           value: edgescale
-        - name: DB_USER
-          value: root
-        - name: DB_PORT
-          value: "5432"
-        - name: DATABASE
-          value: edgescale
+        - name: dbuser 
+          value: root 
+        - name: apphost
+          value: app-orch-svr-external.openfaas-util
       imagePullSecrets:
         - name: kube-repos

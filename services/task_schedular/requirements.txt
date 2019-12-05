@@ -1,6 +1,0 @@
-marshmallow==2.16.3
-psycopg2_binary==2.7.5
-sqlalchemy==1.2.12
-requests==2.18.4
-boto3
-gevent

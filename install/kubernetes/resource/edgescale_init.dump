@@ -2757,7 +2757,7 @@ ALTER TABLE ONLY public.scale_subdev_reg ALTER COLUMN id SET DEFAULT nextval('pu
 --
 
 COPY public.config (text) FROM stdin;
-{"settings": {"REDIS_PORT": "6379", "DEVICE_STATUS_TABLE": "edgescale_device_status", "REDIS_HOST": "redis-external.openfaas-util", "REDIS_PWD": "edgescale", "REST_API_ID": "j2le", "REST_API_SHORT_ID": "j2le", "ADMIN_EMAIL_PWD": "", "SMTP_HOST": "", "ADMIN_EMAIL": "", "SMTP_PORT": "", "MQTT_MGMT_USER": "admin", "MQTT_MGMT_PASS": "public", "MQTT_URI": "int.msg.edgescale.org:8443", "MQTT_LOCAL_HOST": "http://emqtt-external.openfaas-util:8081", "DEBUG": true, "HOST_SITE": "https://console.edgescale.org/", "LOG_URL": "https://s3.edgescale.org:10086", "API_URI": "https://api.edgescale.org/v1", "DOCKER_CONTNET_TRUST": "https://trust.edgescale.org", "S3_HOST": "http://minio-external.openfaas-util:9000", "MQTT_HOST": "emqtt-external.openfaas-util", "K8S_PORT": "7443", "K8S_HOST": ""}}
+{"settings": {"REDIS_PORT": "6379", "DEVICE_STATUS_TABLE": "edgescale_device_status", "REDIS_HOST": "redis-external.openfaas-util", "REDIS_PASSWD": "edgescale", "REST_API_ID": "j2le", "REST_API_SHORT_ID": "j2le", "ADMIN_EMAIL_PASSWD": "", "SMTP_HOST": "", "ADMIN_EMAIL": "", "SMTP_PORT": "", "MQTT_MGMT_USER": "admin", "MQTT_MGMT_PASSWD": "public", "MQTT_URI": "int.msg.edgescale.org:8443", "MQTT_LOCAL_HOST": "http://emqtt-external.openfaas-util:8081", "DEBUG": true, "HOST_SITE": "https://console.edgescale.org/", "LOG_URL": "https://s3.edgescale.org:10086", "API_URI": "https://api.edgescale.org/v1", "DOCKER_CONTNET_TRUST": "https://trust.edgescale.org", "S3_HOST": "http://minio-external.openfaas-util:9000", "MQTT_HOST": "emqtt-external.openfaas-util", "APPSERVER_PORT": "7443", "APPSERVER_HOST": ""}}
 \.
 
 

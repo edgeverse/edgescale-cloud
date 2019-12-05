@@ -8,11 +8,14 @@ import (
 	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/pem"
+	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/fullsailor/pkcs7"
 	"github.com/gin-gonic/gin"
+	"github.com/x-pkg/requests"
 	"golang.org/x/crypto/ocsp"
 	"io/ioutil"
 	"log"
@@ -25,9 +28,25 @@ import (
 
 func (cfg *Config) BasicAuth(r *http.Request) bool {
 	auth := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
+	s, _ := base64.StdEncoding.DecodeString(auth[1])
+	if strings.Contains(r.Host, "b-est") {
+		//Bootstrap passwd mgmt, TBD.
+		return true
+	}
 
-	// TO DO: validate bootstrap password, e-token
-	log.Println(auth)
+	c := requests.New()
+	c.TLSConfig = &tls.Config{
+		InsecureSkipVerify: true,
+	}
+	c.Header.Add("dcca_token", cfg.ESToken)
+	auth = strings.Split(string(s), ":")
+	var body = map[string]interface{}{"device_id": auth[0], "token": auth[1]}
+	c.Post(fmt.Sprintf("%s/enroll/auth", cfg.ESAPI), body)
+	if c.Response.StatusCode != 200 {
+		j, _ := c.Json()
+		log.Println(auth, j)
+		return false
+	}
 	return true
 }
 
@@ -89,9 +108,13 @@ func (cfg *Config) EnrollPkcs7(w http.ResponseWriter, r *http.Request) {
 func (cfg *Config) getRootCA(id string) (RootCA, error) {
 	var r RootCA
 	cb, err := ioutil.ReadFile(cfg.RootCA.CertFile)
-	log.Println(err)
+	if err != nil {
+		log.Println(err)
+	}
 	kb, err := ioutil.ReadFile(cfg.RootCA.KeyFile)
-	log.Println(err)
+	if err != nil {
+		log.Println(err)
+	}
 	tlsCerts, err := tls.X509KeyPair(cb, kb)
 	r.PrivateKey = tlsCerts.PrivateKey
 	r.Certificate, err = x509.ParseCertificate(tlsCerts.Certificate[0])
@@ -100,7 +123,12 @@ func (cfg *Config) getRootCA(id string) (RootCA, error) {
 
 func (cfg *Config) SimpleEnrollHandler(c *gin.Context) {
 	log.Println("simple Enroll")
-	cfg.BasicAuth(c.Request)
+	if !cfg.BasicAuth(c.Request) {
+		c.JSON(401, gin.H{
+			"message": "Unauthorized",
+		})
+		return
+	}
 	cfg.EnrollPkcs7(c.Writer, c.Request)
 	return
 }
@@ -108,7 +136,12 @@ func (cfg *Config) SimpleEnrollHandler(c *gin.Context) {
 func (cfg *Config) SimpleReenrollHandler(c *gin.Context) {
 	log.Println("simple Reenroll")
 
-	cfg.BasicAuth(c.Request)
+	if !cfg.BasicAuth(c.Request) {
+		c.JSON(401, gin.H{
+			"message": "Unauthorized",
+		})
+		return
+	}
 	if len(c.Request.TLS.PeerCertificates) == 0 {
 		c.Writer.WriteHeader(http.StatusUnauthorized)
 		c.Writer.Write([]byte("401 - Not authorized!"))

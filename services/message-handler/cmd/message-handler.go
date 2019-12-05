@@ -78,9 +78,7 @@ func main() {
 					m.Timestamp = fmt.Sprintf("%d-%d-%dT%02d:%02d:%02dZ", year, mon, day, hour, min, sec)
 					if m.CPUUsage != "" {
 						if m.IpAddr != "" {
-							go func() {
-								statusChannel <- m
-							}()
+							statusChannel <- m
 						}
 					} else {
 						fmt.Println("update status info fiald")
@@ -91,11 +89,10 @@ func main() {
 		},
 	})
 	for i := range statusChannel {
-		statusOperation(redisClient, i)
-		checkErr(err)
+		go func() {
+			statusOperation(redisClient, i)
+		}()
 	}
-	select {}
-
 }
 
 //creat new redis client
@@ -130,10 +127,7 @@ func statusOperation(client *redis.Client, status Status) {
 	client.Expire(status.ID, 180*time.Second)
 }
 
-//func (m *Status) MarshalBinary() ([]byte, error) {
-//	return json.Marshal(m)
-//}
-
+//check error function
 func checkErr(err error) {
 	if err != nil {
 		log.Println(err)

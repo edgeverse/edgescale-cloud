@@ -19,15 +19,13 @@ spec:
         image: HARBOR_URL/HARBOR_REPO_SUB_DIR/task_schedular
         imagePullPolicy: Always
         env:
-        - name: DB_HOST
+        - name: dbhost 
           value: postgres-external.openfaas-util
-        - name: DB_PASSWORD
+        - name: dbpwd 
           value: edgescale
-        - name: DB_USER
-          value: root
-        - name: DB_PORT
-          value: "5432"
-        - name: DATABASE
-          value: edgescale
+        - name: dbuser 
+          value: root 
+        - name: apphost
+          value: app-orch-svr-external.openfaas-util 
       imagePullSecrets:
         - name: kube-repos

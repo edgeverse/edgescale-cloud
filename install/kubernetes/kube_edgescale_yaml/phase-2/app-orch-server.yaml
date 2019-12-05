@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name:  app-orch-svr
-        image: pcloud.edgescale.org/pcloud/app-orchestration-server
+        image: pcloud.edgescale.org/demo/app-orchestration-server
         imagePullPolicy: Always
         env:
         - name: dbhost

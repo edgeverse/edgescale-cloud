@@ -343,7 +343,7 @@ except Exception:
         # hash:device_name
         value = redis_client.hgetall(device_name)
         if value:
-            report_time = value.get("Timestamp", "") 
+            report_time = value.get("Timestamp", "")
             ds = {
                 "cpu_freq": "{:0.1f}GHz".format(int(value["CPUFreq"]) / 1000000) if "CPUFreq" in value else None,
                 "mem_total": "{:0.1f}GB".format(int(value["MemTotal"]) / 1000000) if "MemTotal" in value else None,

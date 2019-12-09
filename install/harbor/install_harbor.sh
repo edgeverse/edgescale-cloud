@@ -1,4 +1,6 @@
 #bin/bash
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+# Copyright 2018-2019 NXP
 
 harbor_domain_name="docker.edgescale.demo" 
 basepath=$(cd "$(dirname "$0")"; pwd)

@@ -3,10 +3,10 @@
         "domain_name":"edgescale.demo",
         "faas_passwd":"edgescale",
         "faas_user":"admin",
-        "harbor_user":"",
-        "harbor_passwd":"",
-        "harbor_domain":"",
-        "harbor_project_name":"",
+        "harbor_user":"admin",
+        "harbor_passwd":"Harbor12345",
+        "harbor_domain":"docker.edgescale.demo",
+        "harbor_project_name":"library",
         "harbor_host_ip":""
     },
     "service":{

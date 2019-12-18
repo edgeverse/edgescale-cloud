@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name:  minio
-        image: HARBOR_URL/HARBOR_REPO_SUB_DIR/minio 
+        image: minio/minio
         imagePullPolicy: Always
         volumeMounts:
         - mountPath: /data 

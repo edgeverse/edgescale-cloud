@@ -124,7 +124,7 @@ WORKDIR /home
 
 COPY kong /home
 RUN apt install -y libssl-dev git
-RUN luarocks install lua-resty-jwt
+RUN luarocks install lua-resty-jwt 0.2.0-0
 RUN luarocks make kong-0.14.0-0.rockspec
 RUN apt remove -y git
 ENV PATH=$PATH:/home/bin

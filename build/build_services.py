@@ -33,7 +33,10 @@ def build_function(rootPath, function_name, docker_repo, docker_sub_dir):
             shutil.copytree(os.path.join(function_path, "edgescale_pyutils"),
                             os.path.join(path, "edgescale_pyutils"))
             if command("faas build {} -f {}.yml".format(generate_build_args(), function_name)) == "error":
-                return "error"
+                shutil.rmtree(path)
+                shutil.rmtree(os.path.join(template_path, "build"))
+                os.remove("{}.yml".format(function_name))
+                raise Exception("failed to deploy function, please retry again!")
             shutil.rmtree(path)
             shutil.rmtree(os.path.join(template_path, "build"))
             os.remove("{}.yml".format(function_name))
